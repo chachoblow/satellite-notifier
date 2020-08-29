@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include <WiFiMulti.h>
-#include <WiFiClient.h>
+#include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 
 struct Coordinates 
@@ -13,21 +13,25 @@ struct Coordinates
 };
 
 WiFiMulti wifiMulti;
-WiFiClient client;
+WiFiClientSecure client;
 bool wifiConnected = false;
 
 unsigned long lastConnectionTime = 0;
 const unsigned long probeInterval = 5000L; // One minute.
 
-String issCoordinatesAsString(Coordinates coordinates)
-{
-    return String(coordinates.latitude) + ", " + String(coordinates.longitude);
-}
+const String API_KEY = "YGFU8B-QDQ8WZ-YDUHB5-4JEU";
+
+int highestSatCount = 0;
 
 bool makeHttpRequest()
 {
-    client.println(F("GET /iss-now.json HTTP/1.0"));
-    client.println(F("Host: api.open-notify.org"));
+    String myLat = "47.60621";
+    String myLon = "-122.33207";
+    String myAlt = "0";
+    String searchRadius = "7"; 
+    String categoryId = "0";
+    client.println("GET /rest/v1/satellite/above/" + myLat + "/" + myLon + "/" + myAlt + "/" + searchRadius + "/" + categoryId + "/&apiKey=" + API_KEY + " HTTP/1.0");
+    client.println(F("Host: www.n2yo.com"));
     client.println(F("Connection: close"));
     if (client.println() == 0)
     {
@@ -61,51 +65,65 @@ bool skipHttpHeaders()
     return true;
 }
 
-Coordinates extractResponseValues(DynamicJsonDocument doc)
+int extractResponseValues(DynamicJsonDocument doc)
 {
-    String message = doc["message"];
-    int timestamp = doc["timestamp"];
-    double latitude = doc["iss_position"]["latitude"];
-    double longitude = doc["iss_position"]["longitude"];
-    Coordinates coordinates = { latitude, longitude };
+    int satCount = doc["info"]["satcount"];
 
     Serial.println(F("--- Response ---"));
-    Serial.print(F("Message: "));
-    Serial.println(message);
-    Serial.print(F("Time stamp: "));
-    Serial.println(timestamp);
-    Serial.print(F("Coordinates: "));
-    Serial.println(issCoordinatesAsString(coordinates));
+    Serial.print("Satellite count: ");
+    Serial.println(satCount);
 
-    return coordinates;
+    highestSatCount = max(highestSatCount, satCount);
+
+    Serial.println("Satellites:");
+    for (int i = 0; i < satCount;  i++) 
+    {
+        String satName = doc["above"][i]["satname"];
+        float satLat = doc["above"][i]["satlat"];
+        float satLng = doc["above"][i]["satlng"];
+        Serial.println("Name: " + satName + ", Lat: " + String(satLat) + ", Lng: " + String(satLng));
+    }
+
+    Serial.println();
+    Serial.println("Highest sat count: " + String(highestSatCount));
+    Serial.println();
+
+    return satCount;
 }
 
-Coordinates deserializeJson()
+int deserializeJson()
 {
-    const size_t capacity = 5 * (JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3));
+    StaticJsonDocument<256> filter;
+    filter["info"]["satcount"] = true;
+    filter["above"][0]["satname"] = true;
+    filter["above"][0]["satlat"] = true;
+    filter["above"][0]["satlng"] = true;
+
+    // Enough space for up to 40 satellites (could probably trim down if needed).
+    const size_t capacity = JSON_ARRAY_SIZE(40) + JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(2) + 40 * JSON_OBJECT_SIZE(3);
     DynamicJsonDocument doc(capacity);
-    DeserializationError error = deserializeJson(doc, client);
+    DeserializationError error = deserializeJson(doc, client, DeserializationOption::Filter(filter));
     if (error) 
     {
-        Serial.print(F("deserializeJson() returned "));
+        Serial.print(F("deserializeJson() returned: "));
         Serial.println(error.c_str());
-        return {};
+        return -1;
     }
     return extractResponseValues(doc);
 }
 
-Coordinates fetchIssCordinates() 
+int fetchSatCount() 
 {
     client.stop();
     lastConnectionTime = millis();
     
-    if (client.connect("api.open-notify.org", 80)) 
+    if (client.connect("www.n2yo.com", 443)) 
     {
         Serial.println("Connected to server.");
         Serial.println();
         if (!(makeHttpRequest() && checkHttpStatus() && skipHttpHeaders())) 
         {
-            return {};
+            return -1;
         }
         return deserializeJson();
     }
@@ -113,7 +131,7 @@ Coordinates fetchIssCordinates()
     {
         Serial.println("Connection failed.");
         Serial.println();
-        return {};
+        return -1;
     }
 }
 
@@ -164,19 +182,18 @@ void loop()
     {
         if (millis() - lastConnectionTime > probeInterval || lastConnectionTime == 0)
         {
-            Coordinates coordinates = fetchIssCordinates();
-            String coordinatesAsString = issCoordinatesAsString(coordinates);
+            int satCount = fetchSatCount();
 
             // TODO: Develop better way to error check. 
-            if (coordinatesAsString.equals("0.00, 0.00"))
+            if (satCount == -1)
             {
                 Serial.println("Error fetching coordinates: No coordinates returned.");
                 Serial.println();
             }
             else
             {
-                Serial.print("ISS coordinates: ");
-                Serial.println(coordinatesAsString);
+                Serial.print("Satellite count: ");
+                Serial.println(satCount);
                 Serial.println();
             }
         }
