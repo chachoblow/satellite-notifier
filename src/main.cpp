@@ -1,10 +1,16 @@
 #define ARDUINOJSON_DECODE_UNICODE 1
 #define ARDUINOJSON_ENABLE_ARDUINO_STRING 1
+#define NUM_LEDS 16
 
 #include <Arduino.h>
 #include <WiFiMulti.h>
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
+#include <ShiftRegister74HC595.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_IS31FL3731.h>
+#include <SPI.h>
+#include <Wire.h>
 
 struct Coordinates 
 {
@@ -22,6 +28,18 @@ const unsigned long probeInterval = 5000L; // One minute.
 const String API_KEY = "YGFU8B-QDQ8WZ-YDUHB5-4JEU";
 
 int highestSatCount = 0;
+
+int delayTime = 100;
+int latchPin = 26; // RCLK
+int clockPin = 27; // SRCLK
+int dataPin = 25; // SER
+
+// parameters: <number of shift registers> (data pin, clock pin, latch pin)
+ShiftRegister74HC595<2> sr(dataPin, clockPin, latchPin);
+
+Adafruit_IS31FL3731 ledMatrix = Adafruit_IS31FL3731();
+uint8_t sweep[] = {1, 2, 3, 4, 6, 8, 10, 15, 20, 30, 40, 60, 60, 40, 30, 20, 15, 10, 8, 6, 4, 3, 2, 1};
+
 
 bool makeHttpRequest()
 {
@@ -169,33 +187,92 @@ void connectToWifi()
     }
 }
 
+void updateShiftRegister(byte storageByte)
+{
+    digitalWrite(latchPin, LOW);
+    shiftOut(dataPin, clockPin, LSBFIRST, storageByte);
+    digitalWrite(latchPin, HIGH);
+}
+
 void setup() 
 {
     Serial.begin(9600);
     delay(100);
     connectToWifi();
+
+    pinMode(latchPin, OUTPUT);
+    pinMode(dataPin, OUTPUT);
+    pinMode(clockPin, OUTPUT);
+
+    if (!ledMatrix.begin()) 
+  {
+    Serial.println("ES31 not found.");
+    while(1);
+  }
+  Serial.println("IS31 found.");
+}
+
+void updateSatCount()
+{
+    int satCount = fetchSatCount();
+
+    if (satCount == -1)
+    {
+        Serial.println("Error fetching coordinates: No coordinates returned.");
+        Serial.println();
+    }
+    else
+    {
+        Serial.print("Satellite count: ");
+        Serial.println(satCount);
+        Serial.println();
+    }
+}
+
+void updateLeds()
+{
+    // byte storageByte = 0x1;
+    // for (int i = 0; i < NUM_LEDS; i++) 
+    // {
+    //     updateShiftRegister(storageByte);
+    //     storageByte = storageByte << 1;
+    //     delay(delayTime);
+    // }
+    // for (int i = 0; i < NUM_LEDS - 1; i++) 
+    // {
+    //     updateShiftRegister(storageByte);
+    //     storageByte = storageByte >> 1;
+    //     delay(delayTime);
+    // }
+
+    sr.setAllHigh();
+    delay(500);
+    
+    sr.setAllLow();
+    delay(500);
+
+    for (int i = 0; i < NUM_LEDS; i++) 
+    {
+        sr.set(i, HIGH);
+        delay(250);
+    }
+
+    delay(500);
 }
 
 void loop() 
 {
-    if (wifiConnected)
+    if (wifiConnected && (millis() - lastConnectionTime > probeInterval || lastConnectionTime == 0))
     {
-        if (millis() - lastConnectionTime > probeInterval || lastConnectionTime == 0)
-        {
-            int satCount = fetchSatCount();
-
-            // TODO: Develop better way to error check. 
-            if (satCount == -1)
-            {
-                Serial.println("Error fetching coordinates: No coordinates returned.");
-                Serial.println();
-            }
-            else
-            {
-                Serial.print("Satellite count: ");
-                Serial.println(satCount);
-                Serial.println();
-            }
-        }
+        updateSatCount();
     }
+
+    //updateLeds();
+
+    // animate over all the pixels, and set the brightness from the sweep table
+  for (uint8_t incr = 0; incr < 24; incr++)
+    for (uint8_t x = 0; x < 16; x++)
+      for (uint8_t y = 0; y < 9; y++)
+        ledMatrix.drawPixel(x, y, sweep[(x+y+incr)%24]);
+  delay(20);
 }
