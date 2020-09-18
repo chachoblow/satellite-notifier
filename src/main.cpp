@@ -6,16 +6,21 @@
 #include <WiFiMulti.h>
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
-#include <ShiftRegister74HC595.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_IS31FL3731.h>
 #include <SPI.h>
 #include <Wire.h>
 
-struct Coordinates 
+struct Coordinates
 {
-    double latitude;
-    double longitude;
+    int x;
+    int y;
+};
+
+struct LedInfo
+{
+    Coordinates coordinates;
+    int count;
 };
 
 WiFiMulti wifiMulti;
@@ -23,65 +28,29 @@ WiFiClientSecure client;
 bool wifiConnected = false;
 
 unsigned long lastConnectionTime = 0;
-const unsigned long probeInterval = 5000L; // One minute.
+const unsigned long probeInterval = 3600L;
 
 const String API_KEY = "YGFU8B-QDQ8WZ-YDUHB5-4JEU";
 
-int highestSatCount = 0;
-
-int delayTime = 100;
-int latchPin = 26; // RCLK
-int clockPin = 27; // SRCLK
-int dataPin = 25; // SER
-
-// parameters: <number of shift registers> (data pin, clock pin, latch pin)
-ShiftRegister74HC595<2> sr(dataPin, clockPin, latchPin);
-
 Adafruit_IS31FL3731 ledMatrix = Adafruit_IS31FL3731();
-uint8_t sweep[] = {1, 2, 3, 4, 6, 8, 10, 15, 20, 30, 40, 60, 60, 40, 30, 20, 15, 10, 8, 6, 4, 3, 2, 1};
 
+const float LEDS_IN_ROW = 9;
+const float RADIUS = 5;
+const float LED_BLOCK_SIZE = (RADIUS * 2) / LEDS_IN_ROW;
 
-bool makeHttpRequest()
-{
-    String myLat = "47.60621";
-    String myLon = "-122.33207";
-    String myAlt = "0";
-    String searchRadius = "7"; 
-    String categoryId = "0";
-    client.println("GET /rest/v1/satellite/above/" + myLat + "/" + myLon + "/" + myAlt + "/" + searchRadius + "/" + categoryId + "/&apiKey=" + API_KEY + " HTTP/1.0");
-    client.println(F("Host: www.n2yo.com"));
-    client.println(F("Connection: close"));
-    if (client.println() == 0)
-    {
-        Serial.println(F("Failed to send reqeust"));
-        return false;
-    }
-    return true;
-}
+const float CENTER_LAT = 47.677490;
+const float CENTER_LNG = -122.265210;
+const float MIN_LAT = CENTER_LAT - RADIUS;
+const float MAX_LAT = CENTER_LAT + RADIUS;
+const float MIN_LNG = CENTER_LNG - RADIUS;
+const float MAX_LNG = CENTER_LNG + RADIUS;
 
-bool checkHttpStatus()
-{
-    char status[32] = { 0 };
-    client.readBytesUntil('\r', status, sizeof(status));
-    if (strcmp(status, "HTTP/1.1 200 OK") != 0)
-    {
-        Serial.print(F("Unexpected response: "));
-        Serial.println(status);
-        return false;
-    }
-    return true;
-}
+const int ARRAY_SIZE = 30;
 
-bool skipHttpHeaders()
-{
-    char endOfHeaders[] = "\r\n\r\n";
-    if (!client.find(endOfHeaders))
-    {
-        Serial.println(F("Invalid response"));
-        return false;
-    }
-    return true;
-}
+Coordinates satCoordinates[ARRAY_SIZE];
+LedInfo leds[ARRAY_SIZE];
+int satelliteCount = 0;
+int ledCount = 0;
 
 int extractResponseValues(DynamicJsonDocument doc)
 {
@@ -91,20 +60,19 @@ int extractResponseValues(DynamicJsonDocument doc)
     Serial.print("Satellite count: ");
     Serial.println(satCount);
 
-    highestSatCount = max(highestSatCount, satCount);
-
-    Serial.println("Satellites:");
     for (int i = 0; i < satCount;  i++) 
     {
         String satName = doc["above"][i]["satname"];
         float satLat = doc["above"][i]["satlat"];
         float satLng = doc["above"][i]["satlng"];
+        
         Serial.println("Name: " + satName + ", Lat: " + String(satLat) + ", Lng: " + String(satLng));
-    }
 
-    Serial.println();
-    Serial.println("Highest sat count: " + String(highestSatCount));
-    Serial.println();
+        Coordinates current;
+        current.x = satLat;
+        current.y = satLng;
+        satCoordinates[i] = current;
+    }
 
     return satCount;
 }
@@ -128,6 +96,48 @@ int deserializeJson()
         return -1;
     }
     return extractResponseValues(doc);
+}
+
+bool skipHttpHeaders()
+{
+    char endOfHeaders[] = "\r\n\r\n";
+    if (!client.find(endOfHeaders))
+    {
+        Serial.println(F("Invalid response"));
+        return false;
+    }
+    return true;
+}
+
+bool checkHttpStatus()
+{
+    char status[32] = { 0 };
+    client.readBytesUntil('\r', status, sizeof(status));
+    if (strcmp(status, "HTTP/1.1 200 OK") != 0)
+    {
+        Serial.print(F("Unexpected response: "));
+        Serial.println(status);
+        return false;
+    }
+    return true;
+}
+
+bool makeHttpRequest()
+{
+    String myLat = "47.677490";
+    String myLon = "-122.265210";
+    String myAlt = "0";
+    String searchRadius = "7"; 
+    String categoryId = "0";
+    client.println("GET /rest/v1/satellite/above/" + myLat + "/" + myLon + "/" + myAlt + "/" + searchRadius + "/" + categoryId + "/&apiKey=" + API_KEY + " HTTP/1.0");
+    client.println(F("Host: www.n2yo.com"));
+    client.println(F("Connection: close"));
+    if (client.println() == 0)
+    {
+        Serial.println(F("Failed to send reqeust"));
+        return false;
+    }
+    return true;
 }
 
 int fetchSatCount() 
@@ -187,22 +197,11 @@ void connectToWifi()
     }
 }
 
-void updateShiftRegister(byte storageByte)
-{
-    digitalWrite(latchPin, LOW);
-    shiftOut(dataPin, clockPin, LSBFIRST, storageByte);
-    digitalWrite(latchPin, HIGH);
-}
-
 void setup() 
 {
     Serial.begin(9600);
     delay(100);
     connectToWifi();
-
-    pinMode(latchPin, OUTPUT);
-    pinMode(dataPin, OUTPUT);
-    pinMode(clockPin, OUTPUT);
 
     if (!ledMatrix.begin()) 
   {
@@ -212,67 +211,149 @@ void setup()
   Serial.println("IS31 found.");
 }
 
-void updateSatCount()
+boolean coordinatesEqual(Coordinates a, Coordinates b)
 {
-    int satCount = fetchSatCount();
+    return a.x == b.x && a.y == b.y;
+}
 
-    if (satCount == -1)
+boolean satInBounds(Coordinates sat)
+{
+    return sat.x >= MIN_LAT && sat.x <= MAX_LAT && sat.y >= MIN_LNG && sat.y <= MAX_LNG;
+}
+
+Coordinates buildLedCoordinates(Coordinates satCoordinates)
+{
+    float latDiff = satCoordinates.x - MIN_LAT;
+    float lngDiff = satCoordinates.y - MIN_LNG;
+    int latRow = latDiff / LED_BLOCK_SIZE;
+    int lngRow = lngDiff / LED_BLOCK_SIZE;
+
+    Coordinates coordinates;
+
+    coordinates.x = latRow;
+    coordinates.y = lngRow;
+
+    return coordinates;
+}
+
+int getInBoundsCoordinates(Coordinates *inBoundsCoordinates)
+{
+    int inBoundsCount = 0;
+
+    for (int i = 0; i < satelliteCount; i++)
     {
-        Serial.println("Error fetching coordinates: No coordinates returned.");
-        Serial.println();
+        if (satInBounds(satCoordinates[i])) 
+        {
+            Coordinates ledCoordinates = buildLedCoordinates(satCoordinates[i]);
+            inBoundsCoordinates[inBoundsCount++] = ledCoordinates;
+        }
     }
-    else
+
+    return inBoundsCount;
+}
+
+int getUniqueLeds(LedInfo *uniqueLeds, Coordinates *getInBoundsCoordinates, int inBoundsCount)
+{
+    int uniqueLedCount = 0;
+
+    for (int i = 0; i < inBoundsCount; i++)
     {
-        Serial.print("Satellite count: ");
-        Serial.println(satCount);
-        Serial.println();
+        Coordinates current = getInBoundsCoordinates[i];
+        bool isUniqueLed = true;
+
+        for (int j = 0; j < uniqueLedCount; j++)
+        {
+            if (coordinatesEqual(current, uniqueLeds[j].coordinates))
+            {
+                uniqueLeds[j].count++;
+                isUniqueLed = false;
+                break;
+            }
+        }
+
+        if (isUniqueLed)
+        {
+            LedInfo uniqueLed;
+            uniqueLed.count = 1;
+            Coordinates coordinates;
+            coordinates.x = current.x;
+            coordinates.y = current.y;
+            uniqueLed.coordinates = coordinates;
+            uniqueLeds[uniqueLedCount++] = uniqueLed;
+        }
     }
+
+    return uniqueLedCount;
+}
+
+void clearEmptyLeds(LedInfo *uniqueLeds, int uniqueLedCount)
+{
+    for (int i = 0; i < ledCount; i++)
+    {
+        LedInfo currentLed = leds[i];
+        bool stillDisplayed = false;
+
+        for (int j = 0; j < uniqueLedCount; j++)
+        {
+            if (coordinatesEqual(uniqueLeds[j].coordinates, currentLed.coordinates))
+            {
+                stillDisplayed = true;
+                break;
+            }
+        }
+
+        if (!stillDisplayed)
+        {
+            ledMatrix.writePixel(leds[i].coordinates.x, leds[i].coordinates.y, 0);
+        }
+    }
+}
+
+void writeLeds(LedInfo *uniqueLeds, int uniqueLedCount)
+{
+    for (int i = 0; i < uniqueLedCount; i++)
+    {
+        Coordinates uniqueCoordinates = uniqueLeds[i].coordinates;
+        ledMatrix.writePixel(uniqueCoordinates.x, uniqueCoordinates.y, 255);
+        leds[i] = uniqueLeds[i];
+    }
+
+    ledCount = uniqueLedCount;
+}
+
+void printActiveLeds()
+{
+    Serial.println();
+    Serial.println("--- Active LEDs ---");
+    for (int i = 0; i < ledCount; i++)
+    {
+        LedInfo current = leds[i];
+        Serial.println("Count: " + String(current.count) + " x: " + String(current.coordinates.x) + " y: " + String(current.coordinates.y));
+    }
+    Serial.println();
 }
 
 void updateLeds()
 {
-    // byte storageByte = 0x1;
-    // for (int i = 0; i < NUM_LEDS; i++) 
-    // {
-    //     updateShiftRegister(storageByte);
-    //     storageByte = storageByte << 1;
-    //     delay(delayTime);
-    // }
-    // for (int i = 0; i < NUM_LEDS - 1; i++) 
-    // {
-    //     updateShiftRegister(storageByte);
-    //     storageByte = storageByte >> 1;
-    //     delay(delayTime);
-    // }
+    Coordinates inBoundsCoordinates[ARRAY_SIZE];
+    int inBoundsCount = getInBoundsCoordinates(inBoundsCoordinates);
 
-    sr.setAllHigh();
-    delay(500);
-    
-    sr.setAllLow();
-    delay(500);
+    LedInfo uniqueLeds[ARRAY_SIZE];
+    int uniqueLedCount = getUniqueLeds(uniqueLeds, inBoundsCoordinates, inBoundsCount);
 
-    for (int i = 0; i < NUM_LEDS; i++) 
-    {
-        sr.set(i, HIGH);
-        delay(250);
-    }
-
-    delay(500);
+    clearEmptyLeds(uniqueLeds, uniqueLedCount);
+    writeLeds(uniqueLeds, uniqueLedCount);
+    printActiveLeds();
 }
 
 void loop() 
 {
     if (wifiConnected && (millis() - lastConnectionTime > probeInterval || lastConnectionTime == 0))
     {
-        updateSatCount();
+        satelliteCount = fetchSatCount();
+        if (satelliteCount != -1) 
+        {
+            updateLeds();
+        }
     }
-
-    //updateLeds();
-
-    // animate over all the pixels, and set the brightness from the sweep table
-  for (uint8_t incr = 0; incr < 24; incr++)
-    for (uint8_t x = 0; x < 16; x++)
-      for (uint8_t y = 0; y < 9; y++)
-        ledMatrix.drawPixel(x, y, sweep[(x+y+incr)%24]);
-  delay(20);
 }
