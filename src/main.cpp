@@ -11,35 +11,26 @@
 #include <SPI.h>
 #include <Wire.h>
 
-struct Coordinates
-{
-    int x;
-    int y;
-};
-
-struct LedInfo
-{
-    Coordinates coordinates;
-    int count;
-};
+#include "coordinate.h"
+#include "led.h"
 
 WiFiMulti wifiMulti;
 WiFiClientSecure client;
 bool wifiConnected = false;
 
 unsigned long lastConnectionTime = 0;
-const unsigned long probeInterval = 3600L;
+const unsigned long probeInterval = 5000L;
 
 const String API_KEY = "YGFU8B-QDQ8WZ-YDUHB5-4JEU";
 
 Adafruit_IS31FL3731 ledMatrix = Adafruit_IS31FL3731();
 
 const float LEDS_IN_ROW = 9;
-const float RADIUS = 5;
+const float RADIUS = 15;
 const float LED_BLOCK_SIZE = (RADIUS * 2) / LEDS_IN_ROW;
 
-const float CENTER_LAT = 47.677490;
-const float CENTER_LNG = -122.265210;
+const float CENTER_LAT = 47.60621;
+const float CENTER_LNG = -122.33207;
 const float MIN_LAT = CENTER_LAT - RADIUS;
 const float MAX_LAT = CENTER_LAT + RADIUS;
 const float MIN_LNG = CENTER_LNG - RADIUS;
@@ -47,8 +38,8 @@ const float MAX_LNG = CENTER_LNG + RADIUS;
 
 const int ARRAY_SIZE = 30;
 
-Coordinates satCoordinates[ARRAY_SIZE];
-LedInfo leds[ARRAY_SIZE];
+Coordinate satellites[ARRAY_SIZE];
+Led leds[ARRAY_SIZE];
 int satelliteCount = 0;
 int ledCount = 0;
 
@@ -63,15 +54,17 @@ int extractResponseValues(DynamicJsonDocument doc)
     for (int i = 0; i < satCount;  i++) 
     {
         String satName = doc["above"][i]["satname"];
-        float satLat = doc["above"][i]["satlat"];
-        float satLng = doc["above"][i]["satlng"];
-        
-        Serial.println("Name: " + satName + ", Lat: " + String(satLat) + ", Lng: " + String(satLng));
 
-        Coordinates current;
-        current.x = satLat;
-        current.y = satLng;
-        satCoordinates[i] = current;
+        if (satName.indexOf("DEB") < 0)
+        {
+            float satLat = doc["above"][i]["satlat"];
+            float satLng = doc["above"][i]["satlng"];
+            
+            Serial.println("Name: " + satName + ", Lat: " + String(satLat) + ", Lng: " + String(satLng));
+
+            Coordinate current(satLat, satLng);
+            satellites[i] = current;
+        }
     }
 
     return satCount;
@@ -86,7 +79,7 @@ int deserializeJson()
     filter["above"][0]["satlng"] = true;
 
     // Enough space for up to 40 satellites (could probably trim down if needed).
-    const size_t capacity = JSON_ARRAY_SIZE(40) + JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(2) + 40 * JSON_OBJECT_SIZE(3);
+    const size_t capacity = JSON_ARRAY_SIZE(100) + JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(2) + 100 * JSON_OBJECT_SIZE(3);
     DynamicJsonDocument doc(capacity);
     DeserializationError error = deserializeJson(doc, client, DeserializationOption::Filter(filter));
     if (error) 
@@ -124,10 +117,10 @@ bool checkHttpStatus()
 
 bool makeHttpRequest()
 {
-    String myLat = "47.677490";
-    String myLon = "-122.265210";
+    String myLat = String(CENTER_LAT);
+    String myLon = String(CENTER_LNG);
     String myAlt = "0";
-    String searchRadius = "7"; 
+    String searchRadius = "15"; 
     String categoryId = "0";
     client.println("GET /rest/v1/satellite/above/" + myLat + "/" + myLon + "/" + myAlt + "/" + searchRadius + "/" + categoryId + "/&apiKey=" + API_KEY + " HTTP/1.0");
     client.println(F("Host: www.n2yo.com"));
@@ -204,66 +197,58 @@ void setup()
     connectToWifi();
 
     if (!ledMatrix.begin()) 
-  {
-    Serial.println("ES31 not found.");
-    while(1);
-  }
-  Serial.println("IS31 found.");
+    {
+        Serial.println("ES31 not found.");
+        while(1);
+    }
+
+    Serial.println("IS31 found.");
 }
 
-boolean coordinatesEqual(Coordinates a, Coordinates b)
-{
-    return a.x == b.x && a.y == b.y;
-}
-
-boolean satInBounds(Coordinates sat)
+boolean satInBounds(Coordinate sat)
 {
     return sat.x >= MIN_LAT && sat.x <= MAX_LAT && sat.y >= MIN_LNG && sat.y <= MAX_LNG;
 }
 
-Coordinates buildLedCoordinates(Coordinates satCoordinates)
+Coordinate buildLedCoordinate(Coordinate satellite)
 {
-    float latDiff = satCoordinates.x - MIN_LAT;
-    float lngDiff = satCoordinates.y - MIN_LNG;
+    float latDiff = satellite.x - MIN_LAT;
+    float lngDiff = satellite.y - MIN_LNG;
     int latRow = latDiff / LED_BLOCK_SIZE;
     int lngRow = lngDiff / LED_BLOCK_SIZE;
 
-    Coordinates coordinates;
-
-    coordinates.x = latRow;
-    coordinates.y = lngRow;
-
-    return coordinates;
+    Coordinate coordinate(latRow, lngRow);
+    return coordinate;
 }
 
-int getInBoundsCoordinates(Coordinates *inBoundsCoordinates)
+int getInBoundsCoordinates(Coordinate *inBoundsCoordinates)
 {
     int inBoundsCount = 0;
 
     for (int i = 0; i < satelliteCount; i++)
     {
-        if (satInBounds(satCoordinates[i])) 
+        if (satInBounds(satellites[i])) 
         {
-            Coordinates ledCoordinates = buildLedCoordinates(satCoordinates[i]);
-            inBoundsCoordinates[inBoundsCount++] = ledCoordinates;
+            Coordinate coordinate = buildLedCoordinate(satellites[i]);
+            inBoundsCoordinates[inBoundsCount++] = coordinate;
         }
     }
 
     return inBoundsCount;
 }
 
-int getUniqueLeds(LedInfo *uniqueLeds, Coordinates *getInBoundsCoordinates, int inBoundsCount)
+int getUniqueLeds(Led *uniqueLeds, Coordinate *getInBoundsCoordinates, int inBoundsCount)
 {
     int uniqueLedCount = 0;
 
     for (int i = 0; i < inBoundsCount; i++)
     {
-        Coordinates current = getInBoundsCoordinates[i];
+        Coordinate current = getInBoundsCoordinates[i];
         bool isUniqueLed = true;
 
         for (int j = 0; j < uniqueLedCount; j++)
         {
-            if (coordinatesEqual(current, uniqueLeds[j].coordinates))
+            if (current.equals(uniqueLeds[j].coordinate))
             {
                 uniqueLeds[j].count++;
                 isUniqueLed = false;
@@ -273,12 +258,7 @@ int getUniqueLeds(LedInfo *uniqueLeds, Coordinates *getInBoundsCoordinates, int 
 
         if (isUniqueLed)
         {
-            LedInfo uniqueLed;
-            uniqueLed.count = 1;
-            Coordinates coordinates;
-            coordinates.x = current.x;
-            coordinates.y = current.y;
-            uniqueLed.coordinates = coordinates;
+            Led uniqueLed(current, 1);
             uniqueLeds[uniqueLedCount++] = uniqueLed;
         }
     }
@@ -286,16 +266,16 @@ int getUniqueLeds(LedInfo *uniqueLeds, Coordinates *getInBoundsCoordinates, int 
     return uniqueLedCount;
 }
 
-void clearEmptyLeds(LedInfo *uniqueLeds, int uniqueLedCount)
+void clearEmptyLeds(Led *uniqueLeds, int uniqueLedCount)
 {
     for (int i = 0; i < ledCount; i++)
     {
-        LedInfo currentLed = leds[i];
+        Led led = leds[i];
         bool stillDisplayed = false;
 
         for (int j = 0; j < uniqueLedCount; j++)
         {
-            if (coordinatesEqual(uniqueLeds[j].coordinates, currentLed.coordinates))
+            if (led.coordinate.equals(uniqueLeds[j].coordinate))
             {
                 stillDisplayed = true;
                 break;
@@ -304,17 +284,18 @@ void clearEmptyLeds(LedInfo *uniqueLeds, int uniqueLedCount)
 
         if (!stillDisplayed)
         {
-            ledMatrix.writePixel(leds[i].coordinates.x, leds[i].coordinates.y, 0);
+            Coordinate coordinate = leds[i].coordinate;
+            ledMatrix.writePixel(coordinate.x, coordinate.y, 0);
         }
     }
 }
 
-void writeLeds(LedInfo *uniqueLeds, int uniqueLedCount)
+void writeLeds(Led *uniqueLeds, int uniqueLedCount)
 {
     for (int i = 0; i < uniqueLedCount; i++)
     {
-        Coordinates uniqueCoordinates = uniqueLeds[i].coordinates;
-        ledMatrix.writePixel(uniqueCoordinates.x, uniqueCoordinates.y, 255);
+        Coordinate coordinate = uniqueLeds[i].coordinate;
+        ledMatrix.writePixel(coordinate.x, coordinate.y, 255);
         leds[i] = uniqueLeds[i];
     }
 
@@ -327,18 +308,18 @@ void printActiveLeds()
     Serial.println("--- Active LEDs ---");
     for (int i = 0; i < ledCount; i++)
     {
-        LedInfo current = leds[i];
-        Serial.println("Count: " + String(current.count) + " x: " + String(current.coordinates.x) + " y: " + String(current.coordinates.y));
+        Led current = leds[i];
+        Serial.println("Count: " + String(current.count) + " x: " + String(current.coordinate.x) + " y: " + String(current.coordinate.y));
     }
     Serial.println();
 }
 
 void updateLeds()
 {
-    Coordinates inBoundsCoordinates[ARRAY_SIZE];
+    Coordinate inBoundsCoordinates[ARRAY_SIZE];
     int inBoundsCount = getInBoundsCoordinates(inBoundsCoordinates);
 
-    LedInfo uniqueLeds[ARRAY_SIZE];
+    Led uniqueLeds[ARRAY_SIZE];
     int uniqueLedCount = getUniqueLeds(uniqueLeds, inBoundsCoordinates, inBoundsCount);
 
     clearEmptyLeds(uniqueLeds, uniqueLedCount);
