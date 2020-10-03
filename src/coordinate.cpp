@@ -2,7 +2,7 @@
 
 Coordinate::Coordinate() = default;
 
-Coordinate::Coordinate(int x, int y)
+Coordinate::Coordinate(float x, float y)
 {
     this->x = x;
     this->y = y;
@@ -10,5 +10,5 @@ Coordinate::Coordinate(int x, int y)
 
 boolean Coordinate::equals(Coordinate other)
 {
-    return this->x == other.x && this->y == other.y;
+    return x == other.x && y == other.y;
 }

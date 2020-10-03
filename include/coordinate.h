@@ -4,12 +4,10 @@
 
 class Coordinate
 {
-    private:
-
     public:
-        int x;
-        int y;
+        float x;
+        float y;
         Coordinate();
-        Coordinate(int, int);
+        Coordinate(float, float);
         boolean equals(Coordinate);
 };

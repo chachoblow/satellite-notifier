@@ -5,8 +5,6 @@
 
 class Led
 {
-    private:
-
     public:
         Coordinate coordinate;
         int count;
