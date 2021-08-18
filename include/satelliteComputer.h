@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
+#include "satellite.h"
 #include "coordinate.h"
 #include "constants.h"
 
@@ -15,13 +16,13 @@ class SatelliteComputer
     public:
         unsigned long lastConnectionTime;
         SatelliteComputer();
-        int fetchSatellites(std::vector<Coordinate>&);
+        int fetchSatellites(std::vector<Satellite>&);
         
     private:
         WiFiClientSecure _client;
         bool makeHttpRequest();
         bool checkHttpStatus();
         bool skipHttpHeaders();
-        int deserializeJson(std::vector<Coordinate>&);
-        int extractResponseValues(DynamicJsonDocument, std::vector<Coordinate>&);
+        int deserializeJson(std::vector<Satellite>&);
+        int extractResponseValues(DynamicJsonDocument, std::vector<Satellite>&);
 };

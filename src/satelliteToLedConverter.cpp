@@ -14,11 +14,16 @@ SatelliteToLedConverter::SatelliteToLedConverter(int matrixWidth, int matrixHeig
     _searchMinY = searchCenter.y - (searchHeight / 2);
 }
 
-void SatelliteToLedConverter::convert(std::vector<Coordinate> &coordinates)
+void SatelliteToLedConverter::convert(std::vector<Satellite> &satellites, std::vector<Coordinate> &leds)
 {
-    for (int i = 0; i < coordinates.size(); i++)
+    leds.clear();
+
+    for (int i = 0; i < satellites.size(); i++)
     {
-        coordinates[i].x = round((coordinates[i].x - _searchMinX) * _scaleVector[0]);
-        coordinates[i].y = round((coordinates[i].y - _searchMinY) * _scaleVector[1]);
+        float x = round((satellites[i].coordinates.x - _searchMinX) * _scaleVector[0]);
+        float y = round((satellites[i].coordinates.y - _searchMinY) * _scaleVector[1]);
+
+        Coordinate current(x, y);
+        leds.push_back(current);
     }
 }

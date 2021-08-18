@@ -4,6 +4,8 @@
 #include "constants.h"
 #include "coordinate.h"
 #include "led.h"
+#include "satellite.h"
+#include "speaker.h"
 #include "wiFiHandler.h"
 #include "satelliteComputer.h"
 #include "ledMatrix.h"
@@ -12,7 +14,8 @@
 WiFiHandler wiFiHandler("DucksBeakTheBears", "ChampKlein90");
 SatelliteComputer satelliteComputer;
 const unsigned long probeInterval = 5000L;
-std::vector<Coordinate> satellites;
+std::vector<Satellite> satellites;
+std::vector<Coordinate> leds;
 const int MATRIX_WIDTH = 9;
 const int MATRIX_HEIGHT = 9;
 const Coordinate CENTER(
@@ -22,6 +25,7 @@ SatelliteToLedConverter satelliteToLedConverter(
     MATRIX_WIDTH, MATRIX_HEIGHT, 
     SatelliteConstants::SEARCH_RADIUS, SatelliteConstants::SEARCH_RADIUS, 
     CENTER);
+Speaker speaker(0, 8, 23);
     
 void setup() 
 {
@@ -29,6 +33,7 @@ void setup()
     delay(100);
     wiFiHandler.connectToWiFi();
     ledMatrix.initialize();
+    speaker.initialize();
 }
 
 bool probeIntervalElapsed()
@@ -50,12 +55,16 @@ void loop()
         int satCount = satelliteComputer.fetchSatellites(satellites);
         if (satCount != -1) 
         {
-            satelliteToLedConverter.convert(satellites);
-            ledMatrix.update(satellites);
+            satelliteToLedConverter.convert(satellites, leds);
+            ledMatrix.update(leds);
         }
     }
     else if (!wiFiHandler.wiFiConnected)
     {
         wiFiHandler.connectToWiFi();
+    }
+    else 
+    {
+        speaker.player(satellites);
     }
 }

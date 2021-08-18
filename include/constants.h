@@ -20,3 +20,12 @@ namespace N2YORequestConstants
     const String API_KEY = "YGFU8B-QDQ8WZ-YDUHB5-4JEU";
     const unsigned long PROBE_INTERVAL = 5000L;
 }
+
+namespace SpeakerConstants
+{
+    const uint8_t CHANNEL = 0;
+    const uint8_t BITS = 8;
+    const uint8_t PIN = 23;
+    const int MAX_VALUES = 256;
+    const float CONVERSION_FACTOR = (2 * PI) / MAX_VALUES;
+}
