@@ -20,6 +20,8 @@ class SatelliteComputer
         
     private:
         WiFiClientSecure _client;
+        const char* _rootCa;
+        const char* _server;
         bool makeHttpRequest();
         bool checkHttpStatus();
         bool skipHttpHeaders();

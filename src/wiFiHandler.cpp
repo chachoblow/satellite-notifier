@@ -15,7 +15,7 @@ void WiFiHandler::connectToWiFi()
     _wiFiMulti.addAP(_ssid.c_str(), _password.c_str());
 
     Serial.println();
-    Serial.print("Connecting...");
+    Serial.println("Connecting to WiFi...");
 
     unsigned long wifiConnectionTime = millis();
     const unsigned long maxConnectionTime = 60000L;
@@ -28,8 +28,7 @@ void WiFiHandler::connectToWiFi()
     if (_wiFiMulti.run() == WL_CONNECTED)
     {
         wiFiConnected = true;
-        Serial.println();
-        Serial.print("Connected to ");
+        Serial.print("Connected to SSID: ");
         Serial.println(WiFi.SSID());
         Serial.print("IP address: ");
         Serial.println(WiFi.localIP());
@@ -37,7 +36,6 @@ void WiFiHandler::connectToWiFi()
     }
     else 
     {
-        Serial.println();
         Serial.println("Could not connect to WiFi.");
         Serial.println();
     }

@@ -11,21 +11,30 @@
 #include "ledMatrix.h"
 #include "satelliteToLedConverter.h"
 
+// WiFi / Connection
 WiFiHandler wiFiHandler("DucksBeakTheBears", "ChampKlein90");
-SatelliteComputer satelliteComputer;
+// The n2yo API only allows for 1000 transactions per hour. Thus, this probeInterval
+//  must stay above 3600000 / 1000 = 360.
 const unsigned long probeInterval = 5000L;
+
+// Satellites
+SatelliteComputer satelliteComputer;
 std::vector<Satellite> satellites;
-std::vector<Coordinate> leds;
+
+// LED matrix
 const int MATRIX_WIDTH = 9;
 const int MATRIX_HEIGHT = 9;
+LedMatrix ledMatrix(MATRIX_WIDTH, MATRIX_HEIGHT);
+std::vector<Coordinate> leds;
 const Coordinate CENTER(
     SatelliteConstants::MY_LAT, SatelliteConstants::MY_LNG);
-LedMatrix ledMatrix(MATRIX_WIDTH, MATRIX_HEIGHT);
 SatelliteToLedConverter satelliteToLedConverter(
     MATRIX_WIDTH, MATRIX_HEIGHT, 
     SatelliteConstants::SEARCH_RADIUS, SatelliteConstants::SEARCH_RADIUS, 
     CENTER);
-Speaker speaker(0, 8, 23);
+
+// Speaker
+Speaker speaker(0, 8, 19);
     
 void setup() 
 {
@@ -49,8 +58,7 @@ void loop()
     {
         wiFiHandler.connectToWiFi();
     }
-
-    if (wiFiHandler.wiFiConnected && probeIntervalElapsed())
+    else if (probeIntervalElapsed())
     {
         int satCount = satelliteComputer.fetchSatellites(satellites);
         if (satCount != -1) 
@@ -58,10 +66,6 @@ void loop()
             satelliteToLedConverter.convert(satellites, leds);
             ledMatrix.update(leds);
         }
-    }
-    else if (!wiFiHandler.wiFiConnected)
-    {
-        wiFiHandler.connectToWiFi();
     }
     else 
     {

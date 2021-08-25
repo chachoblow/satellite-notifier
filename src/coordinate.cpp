@@ -8,7 +8,7 @@ Coordinate::Coordinate(float x, float y)
     this->y = y;
 }
 
-boolean Coordinate::equals(Coordinate other)
+boolean Coordinate::equals(Coordinate &other)
 {
     return x == other.x && y == other.y;
 }

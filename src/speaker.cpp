@@ -13,6 +13,9 @@ Speaker::Speaker(uint8_t channel, uint8_t bits, uint8_t pin)
 
 void Speaker::initialize()
 {
+    Serial.println("Initializing speaker...");
+    Serial.println();
+    
     ledcSetup(_channel, 0, _bits);
     ledcAttachPin(_pin, _channel);
 

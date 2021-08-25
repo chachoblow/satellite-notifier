@@ -13,12 +13,15 @@ LedMatrix::LedMatrix(int width, int height)
 
 void LedMatrix::initialize()
 {
+    Serial.println("Initializing LED matrix...");
     if (!_ledMatrix.begin()) 
     {
-        Serial.println("ES31 not found.");
+        Serial.println("IS31 not found.");
+        Serial.println();
         while(1);
     }
     Serial.println("IS31 found.");  
+    Serial.println();
 }
 
 void LedMatrix::update(std::vector<Coordinate> &coordinates)
@@ -61,34 +64,27 @@ void LedMatrix::buildLeds(std::vector<Coordinate> &coordinates)
     }
 }
 
-void LedMatrix::updateLeds()
+void LedMatrix::clearLeds() 
 {
-    int ledCount = static_cast<int>(_leds.size()); 
-    highestLedCount = max(highestLedCount, ledCount);
-
     for (int x = 0; x < LedMatrixConstants::BOARD_WIDTH; x++)
     {
         for (int y = 0; y < LedMatrixConstants::BOARD_HEIGHT; y++)
         {
-            Coordinate current(x, y);
-            bool active = false;
-
-            for (int i = 0; i < _leds.size(); i++)
-            {
-                if (_leds[i].coordinate.equals(current))
-                {
-                    uint16_t brightness = static_cast<uint16_t>(_leds[i].count * 51);
-                    _ledMatrix.drawPixel(x, y, brightness);
-                    active = true;
-                    break;
-                }
-            }
-
-            if (!active)
-            {
-                _ledMatrix.drawPixel(x, y, 0);
-            }
+            _ledMatrix.drawPixel(x, y, 0);
         }
+    }
+}
+
+void LedMatrix::updateLeds()
+{
+    clearLeds();
+
+    for (int i = 0; i < _leds.size(); i++) 
+    {
+        Led current = _leds[i];
+        // TODO: Brightness doesn't seem to have any effect.
+        uint16_t brightness = static_cast<uint16_t>(current.count * 51);
+        _ledMatrix.drawPixel(current.coordinate.x, current.coordinate.y, brightness);
     }
 }
 
@@ -102,8 +98,11 @@ void LedMatrix::printLedsToSerial()
         int count = _leds[i].count;
         int x = _leds[i].coordinate.x;
         int y = _leds[i].coordinate.y;
-        Serial.println("Count: " + String(count) + " x: " + String(x) + " y: " + String(y));
+        Serial.println("Count: " + String(count) + ", x: " + String(x) + ", y: " + String(y));
     }
+
+    int ledCount = static_cast<int>(_leds.size()); 
+    highestLedCount = max(highestLedCount, ledCount);
 
     Serial.println();
     Serial.println("Highest led count: " + String(highestLedCount));

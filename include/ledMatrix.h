@@ -22,6 +22,7 @@ class LedMatrix
         int _width;
         int _height;
         void buildLeds(std::vector<Coordinate>&);
+        void clearLeds();
         void updateLeds();
         void printLedsToSerial();
 };
