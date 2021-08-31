@@ -10,6 +10,10 @@
 #include "satelliteComputer.h"
 #include "ledMatrix.h"
 #include "satelliteToLedConverter.h"
+#include "seedHandler.h"
+
+#define RXD2 16
+#define TXD2 17
 
 // WiFi / Connection
 WiFiHandler wiFiHandler("DucksBeakTheBears", "ChampKlein90");
@@ -20,6 +24,7 @@ const unsigned long probeInterval = 5000L;
 // Satellites
 SatelliteComputer satelliteComputer;
 std::vector<Satellite> satellites;
+bool satellitesUpdated = false;
 
 // LED matrix
 const int MATRIX_WIDTH = 9;
@@ -34,7 +39,11 @@ SatelliteToLedConverter satelliteToLedConverter(
     CENTER);
 
 // Speaker
-Speaker speaker(0, 8, 19);
+// Speaker speaker(0, 8, 19);
+
+// Seed
+HardwareSerial SerialSeed(2);
+SeedHandler seedHandler(SerialSeed);
     
 void setup() 
 {
@@ -42,7 +51,7 @@ void setup()
     delay(100);
     wiFiHandler.connectToWiFi();
     ledMatrix.initialize();
-    speaker.initialize();
+    delay(500);
 }
 
 bool probeIntervalElapsed()
@@ -65,10 +74,8 @@ void loop()
         {
             satelliteToLedConverter.convert(satellites, leds);
             ledMatrix.update(leds);
+            seedHandler.updateSeed(satellites);
+            satellitesUpdated = true;
         }
-    }
-    else 
-    {
-        speaker.player(satellites);
     }
 }
