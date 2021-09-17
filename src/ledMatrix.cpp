@@ -72,13 +72,7 @@ void LedMatrix::buildLeds(std::vector<Coordinate> &coordinates)
 
 void LedMatrix::clearLeds() 
 {
-    for (int x = 0; x < LedMatrixConstants::BOARD_WIDTH; x++)
-    {
-        for (int y = 0; y < LedMatrixConstants::BOARD_HEIGHT; y++)
-        {
-            _ledMatrix.drawPixel(x, y, 0);
-        }
-    }
+    _ledMatrix.clear();
 }
 
 void LedMatrix::updateLeds()
