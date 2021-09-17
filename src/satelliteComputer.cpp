@@ -120,6 +120,7 @@ int SatelliteComputer::deserializeJson(std::vector<Satellite> &satellites)
     filter["above"][0]["satlat"] = true;
     filter["above"][0]["satlng"] = true;
     filter["above"][0]["satalt"] = true;
+    filter["above"][0]["satid"] = true;
 
     // Enough space for up to 40 satellites (could probably trim down if needed).
     const size_t capacity = JSON_ARRAY_SIZE(40) + JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(2) + 40 * JSON_OBJECT_SIZE(4);
@@ -131,6 +132,7 @@ int SatelliteComputer::deserializeJson(std::vector<Satellite> &satellites)
         Serial.println(error.c_str());
         return -1;
     }
+    
     return extractResponseValues(doc, satellites);
 }
 
@@ -150,11 +152,12 @@ int SatelliteComputer::extractResponseValues(DynamicJsonDocument doc, std::vecto
         float satLat = doc["above"][i]["satlat"];
         float satLng = doc["above"][i]["satlng"];
         float satAlt = doc["above"][i]["satalt"];
+        int satId = doc["above"][i]["satid"];
         
-        Serial.println("Name: " + satName + ", Lat: " + String(satLat) + ", Lng: " + String(satLng) + ", Alt: " + String(satAlt));
+        Serial.println("Name: " + satName + ", Lat: " + String(satLat) + ", Lng: " + String(satLng) + ", Alt: " + String(satAlt) + ", Id: " + String(satId));
 
         Coordinate satCoord(satLat, satLng);
-        Satellite current(satAlt, satCoord, satName);
+        Satellite current(satAlt, satCoord, satName, satId);
         satellites.push_back(current);
     }
 

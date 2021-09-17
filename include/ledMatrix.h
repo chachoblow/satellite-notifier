@@ -15,6 +15,7 @@ class LedMatrix
         LedMatrix(int, int);
         void initialize();
         void update(std::vector<Coordinate>&);
+        void updateBrightness();
 
     private:
         Adafruit_IS31FL3731 _ledMatrix;

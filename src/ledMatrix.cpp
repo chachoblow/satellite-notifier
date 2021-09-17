@@ -27,8 +27,14 @@ void LedMatrix::initialize()
 void LedMatrix::update(std::vector<Coordinate> &coordinates)
 {
     buildLeds(coordinates);
+    clearLeds();
     updateLeds();
     printLedsToSerial();
+}
+
+void LedMatrix::updateBrightness()
+{
+    updateLeds();
 }
 
 void LedMatrix::buildLeds(std::vector<Coordinate> &coordinates)
@@ -77,13 +83,10 @@ void LedMatrix::clearLeds()
 
 void LedMatrix::updateLeds()
 {
-    clearLeds();
-
     for (int i = 0; i < _leds.size(); i++) 
     {
         Led current = _leds[i];
-        // TODO: Brightness doesn't seem to have any effect.
-        uint16_t brightness = static_cast<uint16_t>(current.count * 51);
+        uint16_t brightness = map(analogRead(LedMatrixConstants::POT_PIN), 0, 4095, 0, 255);
         _ledMatrix.drawPixel(current.coordinate.x, current.coordinate.y, brightness);
     }
 }

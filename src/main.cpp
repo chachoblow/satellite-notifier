@@ -5,7 +5,6 @@
 #include "coordinate.h"
 #include "led.h"
 #include "satellite.h"
-#include "speaker.h"
 #include "wiFiHandler.h"
 #include "satelliteComputer.h"
 #include "ledMatrix.h"
@@ -31,15 +30,11 @@ const int MATRIX_WIDTH = 9;
 const int MATRIX_HEIGHT = 9;
 LedMatrix ledMatrix(MATRIX_WIDTH, MATRIX_HEIGHT);
 std::vector<Coordinate> leds;
-const Coordinate CENTER(
-    SatelliteConstants::MY_LAT, SatelliteConstants::MY_LNG);
+const Coordinate CENTER(SatelliteConstants::MY_LAT, SatelliteConstants::MY_LNG);
 SatelliteToLedConverter satelliteToLedConverter(
     MATRIX_WIDTH, MATRIX_HEIGHT, 
     SatelliteConstants::SEARCH_RADIUS, SatelliteConstants::SEARCH_RADIUS, 
     CENTER);
-
-// Speaker
-// Speaker speaker(0, 8, 19);
 
 // Seed
 HardwareSerial SerialSeed(2);
@@ -77,5 +72,9 @@ void loop()
             seedHandler.updateSeed(satellites);
             satellitesUpdated = true;
         }
+    }
+    else 
+    {
+        ledMatrix.updateBrightness();
     }
 }

@@ -14,15 +14,12 @@ void SeedHandler::updateSeed(std::vector<Satellite> &satellites)
         Satellite current = satellites[i];
 
         float coordinateSum = abs(current.coordinates.x) + abs(current.coordinates.y);
-        coordinateSum = map(coordinateSum, -270, 270, 0, 255);
-        values.push_back((int)coordinateSum);
-
-        // TODO: Altitudes seem to be either really large numbers, or really small. When
-        //  they are mapped, this leads to either zero, or numbers close to 255.
         float altitude = current.altitude;
-        altitude = constrain(altitude, 0, 100000000);
-        altitude = map (altitude, 0, 100000000, 0, 255);
-        values.push_back((int)altitude);
+        float id = current.id;
+
+        double signal = 1000 * sin(altitude * coordinateSum + id);
+        signal = map(signal, -1000, 1000, 0, 255);
+        values.push_back((int)signal);
     }
 
     Serial.println("Sending satellite values:");
