@@ -35,7 +35,7 @@ bool LedMatrix::coordinateInMatrixRange(const Coordinate &coordinate)  const
 {
     const int x = coordinate.x;
     const int y = coordinate.y;
-    return x >= 0 && x <= _width && y >= 0 && y <= _height;
+    return x >= 0 && x < _width && y >= 0 && y < _height;
 }
 
 std::vector<Led> LedMatrix::ledsFromCoordinates(const std::vector<Coordinate> &coordinates) const 
@@ -53,7 +53,7 @@ std::vector<Led> LedMatrix::ledsFromCoordinates(const std::vector<Coordinate> &c
     for (const auto coordinate: applicableCoordinates) 
     {
         bool coordinateIsUnique = true;
-        for (auto led: leds)
+        for (auto &led: leds)
         {
             if (coordinate.equals(led.coordinate))
             {
@@ -89,9 +89,10 @@ void LedMatrix::redrawMatrix(const std::vector<Led> &leds)
 
     for (const auto led: leds)
     {
-        // TODO: Brightness doesn't seem to have any effect;
-        auto brightness = static_cast<uint16_t>(led.count * 51);
-        _ledMatrix.drawPixel(led.coordinate.x, led.coordinate.y, brightness);
+        // TODO: Consider having brightness correlate to count on LED (e.g., the number of 
+        //  satellites pertaining to that LED coordinate). Brightness doesn't seem to have
+        //  an effect on the matrix - at least a perceivable one. 
+        _ledMatrix.drawPixel(led.coordinate.x, led.coordinate.y, 255);
     }
 }
 
@@ -113,6 +114,7 @@ void LedMatrix::printLedsToSerial(const std::vector<Led> &leds) const
     highestSeenLedsCount = max(highestSeenLedsCount, ledCount);
 
     Serial.println();
+    Serial.println("Active led count: " + String(ledCount));
     Serial.println("Highest seen leds count: " + String(highestSeenLedsCount));
     Serial.println();
 }
