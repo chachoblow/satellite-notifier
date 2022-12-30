@@ -5,9 +5,14 @@
 #include <Adafruit_IS31FL3731.h>
 #include <cmath>
 #include <vector>
-#include "constants.h"
 #include "coordinate.h"
 #include "led.h"
+
+namespace LedMatrixConstants
+{
+    const int BOARD_WIDTH = 16;
+    const int BOARD_HEIGHT = 9;
+}
 
 class LedMatrix
 {

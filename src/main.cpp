@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <Wire.h>
-#include "constants.h"
 #include "coordinate.h"
 #include "led.h"
 #include "satellite.h"
@@ -18,9 +17,6 @@
 
 // WiFi / Connection
 WiFiHandler wiFiHandler(Secrets::SSID, Secrets::PASSWORD);
-// The n2yo API only allows for 1000 transactions per hour. Thus, this probeInterval
-//  must stay above 3600000 / 1000 = 360.
-const unsigned long probeInterval = 5000L;
 
 // Satellites
 SatelliteComputer satelliteComputer;
@@ -57,7 +53,7 @@ void setup()
 bool probeIntervalElapsed()
 {
     bool firstConnection = satelliteComputer.lastConnectionTime == 0;
-    bool intervalElapsed = millis() - satelliteComputer.lastConnectionTime > probeInterval;
+    bool intervalElapsed = millis() - satelliteComputer.lastConnectionTime > N2YORequestConstants::PROBE_INTERVAL;
     return firstConnection || intervalElapsed;
 }
 

@@ -2,8 +2,16 @@
 
 #include <Arduino.h>
 #include <vector>
-#include "constants.h"
 #include "satellite.h"
+
+namespace SpeakerConstants
+{
+    const uint8_t CHANNEL = 0;
+    const uint8_t BITS = 8;
+    const uint8_t PIN = 23;
+    const int MAX_VALUES = 256;
+    const float CONVERSION_FACTOR = (2 * PI) / MAX_VALUES;
+}
 
 class Speaker
 {
