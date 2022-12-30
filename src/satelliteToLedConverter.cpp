@@ -6,24 +6,24 @@ SatelliteToLedConverter::SatelliteToLedConverter(int matrixWidth, int matrixHeig
 {
     float scaleX = matrixWidth / searchWidth;
     float scaleY = matrixHeight / searchHeight;
-    _scaleVector.push_back(scaleX);
-    _scaleVector.push_back(scaleY);
+    _scaleFactors[0] = scaleX;
+    _scaleFactors[1] = scaleY;
 
     _searchCenter = searchCenter;
-    _searchMinX = searchCenter.x - (searchWidth / 2);
-    _searchMinY = searchCenter.y - (searchHeight / 2);
+    _searchMins[0] = searchCenter.x - (searchWidth / 2);
+    _searchMins[1] = searchCenter.y - (searchHeight / 2); 
 }
 
-void SatelliteToLedConverter::convert(std::vector<Satellite> &satellites, std::vector<Coordinate> &leds)
+std::vector<Coordinate> SatelliteToLedConverter::convert(std::vector<Satellite> &satellites) const
 {
-    leds.clear();
-
-    for (int i = 0; i < satellites.size(); i++)
+    std::vector<Coordinate> leds;
+    for (const auto satellite: satellites)
     {
-        float x = round((satellites[i].coordinates.x - _searchMinX) * _scaleVector[0]);
-        float y = round((satellites[i].coordinates.y - _searchMinY) * _scaleVector[1]);
+        float x = round((satellite.coordinate.x - _searchMins[0]) * _scaleFactors[0]);
+        float y = round((satellite.coordinate.y - _searchMins[1]) * _scaleFactors[1]);
 
         Coordinate current(x, y);
         leds.push_back(current);
     }
+    return leds;
 }

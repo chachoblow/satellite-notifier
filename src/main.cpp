@@ -24,7 +24,6 @@ const unsigned long probeInterval = 5000L;
 // Satellites
 SatelliteComputer satelliteComputer;
 std::vector<Satellite> satellites;
-bool satellitesUpdated = false;
 
 // LED matrix
 const int MATRIX_WIDTH = 9;
@@ -72,10 +71,9 @@ void loop()
         int satCount = satelliteComputer.fetchSatellites(satellites);
         if (satCount != -1)
         {
-            satelliteToLedConverter.convert(satellites, leds);
+            auto leds = satelliteToLedConverter.convert(satellites);
             ledMatrix.update(leds);
             seedHandler.updateSeed(satellites);
-            satellitesUpdated = true;
         }
     }
 }

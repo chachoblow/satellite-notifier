@@ -9,5 +9,5 @@ class Coordinate
         float y;
         Coordinate();
         Coordinate(float, float);
-        boolean equals(Coordinate&);
+        bool equals(const Coordinate&) const;
 };

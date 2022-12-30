@@ -41,6 +41,12 @@
     "cinttypes": "cpp",
     "utility": "cpp",
     "typeinfo": "cpp",
-    "string_view": "cpp"
+    "string_view": "cpp",
+    "iterator": "cpp",
+    "map": "cpp",
+    "memory_resource": "cpp",
+    "optional": "cpp",
+    "random": "cpp",
+    "string": "cpp"
   }
 }

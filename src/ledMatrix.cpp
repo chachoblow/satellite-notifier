@@ -1,6 +1,6 @@
 #include "ledMatrix.h"
 
-int highestLedCount = 0;
+int highestSeenLedsCount = 0;
 
 LedMatrix::LedMatrix() = default;
 
@@ -24,47 +24,55 @@ void LedMatrix::initialize()
     Serial.println();
 }
 
-void LedMatrix::update(std::vector<Coordinate> &coordinates)
+void LedMatrix::update(const std::vector<Coordinate> &coordinates)
 {
-    buildLeds(coordinates);
-    updateLeds();
-    printLedsToSerial();
+    auto leds = ledsFromCoordinates(coordinates);
+    redrawMatrix(leds);
+    printLedsToSerial(leds);
 }
 
-void LedMatrix::buildLeds(std::vector<Coordinate> &coordinates)
+bool LedMatrix::coordinateInMatrixRange(const Coordinate &coordinate)  const
 {
-    _leds.clear();
+    const int x = coordinate.x;
+    const int y = coordinate.y;
+    return x >= 0 && x < _width && y >= 0 && y < _height;
+}
 
-    for (int i = 0; i < coordinates.size(); i++)
+std::vector<Led> LedMatrix::ledsFromCoordinates(const std::vector<Coordinate> &coordinates) const 
+{
+    std::vector<Coordinate> applicableCoordinates;
+    for (const auto coordinate: coordinates)
     {
-        Coordinate coordinate = coordinates[i];
-
-        if (coordinate.x < 0 || coordinate.x > _width || coordinate.y < 0 || coordinate.y > _height)
+        if (coordinateInMatrixRange(coordinate))
         {
-            continue;
+            applicableCoordinates.push_back(coordinate);
         }
+    }
 
-        bool isUnique = true;
-
-        for (int j = 0; j < _leds.size(); j++)
+    std::vector<Led> leds;
+    for (const auto coordinate: applicableCoordinates) 
+    {
+        bool coordinateIsUnique = true;
+        for (auto &led: leds)
         {
-            if (coordinate.equals(_leds[j].coordinate))
+            if (coordinate.equals(led.coordinate))
             {
-                _leds[j].count++;
-                isUnique = false;
+                led.count++;
+                coordinateIsUnique = false;
                 break;
             }
         }
-
-        if (isUnique)
+        
+        if (coordinateIsUnique)
         {
             Led led(coordinate, 1);
-            _leds.push_back(led);
+            leds.push_back(led);
         }
     }
+    return leds;
 }
 
-void LedMatrix::clearLeds() 
+void LedMatrix::clearMatrix() 
 {
     for (int x = 0; x < LedMatrixConstants::BOARD_WIDTH; x++)
     {
@@ -75,36 +83,38 @@ void LedMatrix::clearLeds()
     }
 }
 
-void LedMatrix::updateLeds()
+void LedMatrix::redrawMatrix(const std::vector<Led> &leds)
 {
-    clearLeds();
+    clearMatrix();
 
-    for (int i = 0; i < _leds.size(); i++) 
+    for (const auto led: leds)
     {
-        Led current = _leds[i];
-        // TODO: Brightness doesn't seem to have any effect.
-        uint16_t brightness = static_cast<uint16_t>(current.count * 51);
-        _ledMatrix.drawPixel(current.coordinate.x, current.coordinate.y, brightness);
+        // TODO: Consider having brightness correlate to count on LED (e.g., the number of 
+        //  satellites pertaining to that LED coordinate). Brightness doesn't seem to have
+        //  an effect on the matrix - at least a perceivable one. 
+        _ledMatrix.drawPixel(led.coordinate.x, led.coordinate.y, 255);
     }
 }
 
-void LedMatrix::printLedsToSerial()
+void LedMatrix::printLedsToSerial(const std::vector<Led> &leds) const
 {
     Serial.println();
     Serial.println("--- Active LEDs ---");
 
-    for (int i = 0; i < _leds.size(); i++)
+    for (const auto led: leds)
     {
-        int count = _leds[i].count;
-        int x = _leds[i].coordinate.x;
-        int y = _leds[i].coordinate.y;
+        auto count = led.count;
+        auto x = led.coordinate.x;
+        auto y = led.coordinate.y;
+
         Serial.println("Count: " + String(count) + ", x: " + String(x) + ", y: " + String(y));
     }
 
-    int ledCount = static_cast<int>(_leds.size()); 
-    highestLedCount = max(highestLedCount, ledCount);
+    int ledCount = static_cast<int>(leds.size()); 
+    highestSeenLedsCount = max(highestSeenLedsCount, ledCount);
 
     Serial.println();
-    Serial.println("Highest led count: " + String(highestLedCount));
+    Serial.println("Active led count: " + String(ledCount));
+    Serial.println("Highest seen leds count: " + String(highestSeenLedsCount));
     Serial.println();
 }

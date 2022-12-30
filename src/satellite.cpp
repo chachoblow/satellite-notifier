@@ -2,9 +2,9 @@
 
 Satellite::Satellite() = default;
 
-Satellite::Satellite(float altitude, Coordinate coordinates, String name)
+Satellite::Satellite(float altitude, Coordinate coordinate, String name)
 {
     this->altitude = altitude;
-    this->coordinates = coordinates;
+    this->coordinate = coordinate;
     this->name = name;
 }
