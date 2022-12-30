@@ -4,6 +4,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_IS31FL3731.h>
 #include <cmath>
+#include <vector>
 #include "constants.h"
 #include "coordinate.h"
 #include "led.h"
@@ -14,15 +15,15 @@ class LedMatrix
         LedMatrix();
         LedMatrix(int, int);
         void initialize();
-        void update(std::vector<Coordinate>&);
+        void update(const std::vector<Coordinate>&);
 
     private:
         Adafruit_IS31FL3731 _ledMatrix;
-        std::vector<Led> _leds;
         int _width;
         int _height;
-        void buildLeds(std::vector<Coordinate>&);
-        void clearLeds();
-        void updateLeds();
-        void printLedsToSerial();
+        bool coordinateInMatrixRange(const Coordinate&) const;
+        std::vector<Led> ledsFromCoordinates(const std::vector<Coordinate>&) const; 
+        void clearMatrix();
+        void redrawMatrix(const std::vector<Led>&);
+        void printLedsToSerial(const std::vector<Led>&) const;
 };

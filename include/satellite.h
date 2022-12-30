@@ -7,7 +7,7 @@ class Satellite
 {
     public:
         float altitude;
-        Coordinate coordinates;
+        Coordinate coordinate;
         String name;
         Satellite();
         Satellite(float, Coordinate, String);

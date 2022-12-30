@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <vector>
 #include "satellite.h"
 
 #define RXD2 16

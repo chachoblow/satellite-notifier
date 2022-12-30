@@ -3,9 +3,10 @@
 #include <Arduino.h>
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
-#include "satellite.h"
-#include "coordinate.h"
+#include <vector>
 #include "constants.h"
+#include "coordinate.h"
+#include "satellite.h"
 
 #define ARDUINOJSON_DECODE_UNICODE 1
 #define ARDUINOJSON_ENABLE_ARDUINO_STRING 1
@@ -20,8 +21,8 @@ class SatelliteComputer
         
     private:
         WiFiClientSecure _client;
-        const char* _rootCa;
         const char* _server;
+        const char* _rootCa;
         bool makeHttpRequest();
         bool checkHttpStatus();
         bool skipHttpHeaders();

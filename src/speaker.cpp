@@ -51,9 +51,9 @@ void Speaker::player(std::vector<Satellite> &satellites)
     for (int i = 0; i < satellites.size(); i++)
     {
         Serial.print("Altitude: " + String(satellites[i].altitude));
-        Serial.print(", Coordinates: " + String(satellites[i].coordinates.x) + " " + String(satellites[i].coordinates.y));
+        Serial.print(", Coordinates: " + String(satellites[i].coordinate.x) + " " + String(satellites[i].coordinate.y));
         Serial.println(", Name: " + satellites[i].name);
-        float frequency = (abs(satellites[i].coordinates.x) + abs(satellites[i].coordinates.y));
+        float frequency = (abs(satellites[i].coordinate.x) + abs(satellites[i].coordinate.y));
         frequency = map(frequency, 0, 250, 50, 1000);
         frequencies.push_back(frequency);
         float constrainedAlt = constrain(satellites[i].altitude, 1000, 30000);
