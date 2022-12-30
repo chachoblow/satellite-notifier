@@ -74,7 +74,7 @@ bool SatelliteComputer::makeHttpRequest()
         String(SatelliteConstants::MY_ALT) + "/" + 
         String(SatelliteConstants::SEARCH_RADIUS) + "/" +
         String(SatelliteConstants::SAT_CATEGORY_ID) + "/" +
-        "/&apiKey=" + N2YORequestConstants::API_KEY + 
+        "/&apiKey=" + String(Secrets::API_KEY) + 
         " HTTP/1.0";
     _client.println(request);
     _client.print(F("Host: "));

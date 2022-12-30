@@ -17,7 +17,6 @@ namespace SatelliteConstants
 
 namespace N2YORequestConstants
 {
-    const String API_KEY = "YGFU8B-QDQ8WZ-YDUHB5-4JEU";
     const unsigned long PROBE_INTERVAL = 5000L;
 }
 

@@ -11,12 +11,13 @@
 #include "ledMatrix.h"
 #include "satelliteToLedConverter.h"
 #include "seedHandler.h"
+#include "secrets.h"
 
 #define RXD2 16
 #define TXD2 17
 
 // WiFi / Connection
-WiFiHandler wiFiHandler("SSID", "Password");
+WiFiHandler wiFiHandler(Secrets::SSID, Secrets::PASSWORD);
 // The n2yo API only allows for 1000 transactions per hour. Thus, this probeInterval
 //  must stay above 3600000 / 1000 = 360.
 const unsigned long probeInterval = 5000L;

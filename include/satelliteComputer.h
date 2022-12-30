@@ -7,6 +7,7 @@
 #include "constants.h"
 #include "coordinate.h"
 #include "satellite.h"
+#include "secrets.h"
 
 #define ARDUINOJSON_DECODE_UNICODE 1
 #define ARDUINOJSON_ENABLE_ARDUINO_STRING 1
