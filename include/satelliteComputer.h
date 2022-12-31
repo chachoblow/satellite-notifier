@@ -33,15 +33,16 @@ class SatelliteComputer
     public:
         unsigned long lastConnectionTime;
         SatelliteComputer();
-        int fetchSatellites(std::vector<Satellite>&);
+        std::vector<Satellite> fetchSatellites();
         
     private:
         WiFiClientSecure _client;
         const char* _server;
         const char* _rootCa;
-        bool makeHttpRequest();
-        bool checkHttpStatus();
-        bool skipHttpHeaders();
-        int deserializeJson(std::vector<Satellite>&);
-        int extractResponseValues(DynamicJsonDocument, std::vector<Satellite>&);
+        void makeHttpRequest();
+        void checkHttpStatus();
+        void skipHttpHeaders();
+        DynamicJsonDocument deserializeJson();
+        std::vector<Satellite> extractResponseValues(DynamicJsonDocument);
+        void printSatellitesToSerial(const std::vector<Satellite>&) const;
 };

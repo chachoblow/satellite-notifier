@@ -28,7 +28,7 @@ SatelliteComputer::SatelliteComputer()
         "-----END CERTIFICATE-----\n";
 }
 
-int SatelliteComputer::fetchSatellites(std::vector<Satellite> &satellites) 
+std::vector<Satellite> SatelliteComputer::fetchSatellites() 
 {
     _client.stop();
     _client.setCACert(_rootCa);
@@ -42,30 +42,37 @@ int SatelliteComputer::fetchSatellites(std::vector<Satellite> &satellites)
         Serial.println("Connected to server.");
         Serial.println();
 
-        if (!(makeHttpRequest() && checkHttpStatus() && skipHttpHeaders())) 
+        try
         {
-            return -1;
+            makeHttpRequest();
+            checkHttpStatus();
+            skipHttpHeaders();
+            const auto response = deserializeJson();
+            const auto satellites = extractResponseValues(response);
+            printSatellitesToSerial(satellites);
+            return satellites;
         }
+        catch(std::runtime_error &e)
+        {
+            Serial.println(e.what());
+            return {};
+        }
+    }
 
-        deserializeJson(satellites);
-    }
-    else
-    {
-        Serial.println();
-        Serial.println("Connection failed.");
-        char buf[200];
-        int err = _client.lastError(buf, 199);
-        buf[199] = '\0';
-        Serial.println("Last SSL error was:");
-        Serial.println(buf);
-        Serial.print("ERRCODE: "); Serial.println(err);
-        Serial.println();
-        return -1;
-    }
-    return 0;
+    Serial.println();
+    Serial.println("Connection failed.");
+    char buf[200];
+    int err = _client.lastError(buf, 199);
+    buf[199] = '\0';
+    Serial.println("Last SSL error was:");
+    Serial.println(buf);
+    Serial.print("ERRCODE: "); Serial.println(err);
+    Serial.println();
+
+    return {};
 }
 
-bool SatelliteComputer::makeHttpRequest()
+void SatelliteComputer::makeHttpRequest()
 {
     String request = 
         "GET /rest/v1/satellite/above/" + 
@@ -82,83 +89,83 @@ bool SatelliteComputer::makeHttpRequest()
     _client.println(F("Connection: close"));
     if (_client.println() == 0)
     {
-        Serial.println(F("Failed to send reqeust"));
-        return false;
+        throw std::runtime_error("Failed to send request.");
     }
-    return true;
 }
 
-bool SatelliteComputer::checkHttpStatus()
+void SatelliteComputer::checkHttpStatus()
 {
     char status[32] = { 0 };
     _client.readBytesUntil('\r', status, sizeof(status));
     if (strcmp(status, "HTTP/1.1 200 OK") != 0)
     {
-        Serial.print(F("Unexpected response: "));
-        Serial.println(status);
-        return false;
+        throw std::runtime_error("Unexpected response: " + std::string(status));
     }
-    return true;
 }
 
-bool SatelliteComputer::skipHttpHeaders()
+void SatelliteComputer::skipHttpHeaders()
 {
     char endOfHeaders[] = "\r\n\r\n";
     if (!_client.find(endOfHeaders))
     {
-        Serial.println(F("Invalid response"));
-        return false;
+        throw std::runtime_error("Invalid response");
     }
-    return true;
 }
 
-int SatelliteComputer::deserializeJson(std::vector<Satellite> &satellites)
+DynamicJsonDocument SatelliteComputer::deserializeJson()
 {
     StaticJsonDocument<256> filter;
     filter["info"]["satcount"] = true;
+    filter["above"][0]["satid"] = true;
     filter["above"][0]["satname"] = true;
     filter["above"][0]["satlat"] = true;
     filter["above"][0]["satlng"] = true;
     filter["above"][0]["satalt"] = true;
 
     // Enough space for up to 40 satellites (could probably trim down if needed).
-    const size_t capacity = JSON_ARRAY_SIZE(40) + JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(2) + 40 * JSON_OBJECT_SIZE(4);
+    const size_t capacity = JSON_ARRAY_SIZE(40) + JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(2) + 40 * JSON_OBJECT_SIZE(5);
     DynamicJsonDocument doc(capacity);
-    DeserializationError error = ArduinoJson::deserializeJson(doc, _client, DeserializationOption::Filter(filter));
+    auto error = ArduinoJson::deserializeJson(doc, _client, DeserializationOption::Filter(filter));
     if (error) 
     {
-        Serial.print(F("deserializeJson() returned: "));
-        Serial.println(error.c_str());
-        return -1;
+        throw std::runtime_error("Deserialization error: " + std::string(error.c_str()));
     }
-    return extractResponseValues(doc, satellites);
+    return doc;
 }
 
-int SatelliteComputer::extractResponseValues(DynamicJsonDocument doc, std::vector<Satellite> &satellites)
+std::vector<Satellite> SatelliteComputer::extractResponseValues(DynamicJsonDocument doc)
 {
+    std::vector<Satellite> satellites;
     int satCount = doc["info"]["satcount"];
-
-    Serial.println(F("--- Response ---"));
-    Serial.print("Satellite count: ");
-    Serial.println(satCount);
-
-    satellites.clear();
-
     for (int i = 0; i < satCount;  i++) 
     {
-        String satName = doc["above"][i]["satname"];
+        std::string satName = doc["above"][i]["satname"];
+        int satId = doc["above"][i]["satid"];
         float satLat = doc["above"][i]["satlat"];
         float satLng = doc["above"][i]["satlng"];
         float satAlt = doc["above"][i]["satalt"];
         
-        Serial.println("Name: " + satName + ", Lat: " + String(satLat) + ", Lng: " + String(satLng) + ", Alt: " + String(satAlt));
-
         Coordinate satCoord(satLat, satLng);
-        Satellite current(satAlt, satCoord, satName);
+        Satellite current{satId, satName, satCoord, satAlt};
         satellites.push_back(current);
     }
+    return satellites;
+}
 
-    return satCount;
+void SatelliteComputer::printSatellitesToSerial(const std::vector<Satellite> &satellites) const
+{
+    Serial.println("--- Response ---");
+    Serial.println("Satellite count: " + String(satellites.size()));
+    for (const auto satellite: satellites)
+    {
+        Serial.print("Id: " + String(satellite.id));
+        Serial.print(", Name: " + String(satellite.name.c_str()));
+        Serial.print(", Lng: " + String(satellite.coordinate.x));
+        Serial.print(", Lat: " + String(satellite.coordinate.y));
+        Serial.print(", Alt: " + String(satellite.altitude));
+        Serial.println();
+    }
+    Serial.println();
 }
 
 

@@ -64,10 +64,12 @@ void loop()
         wiFiHandler.connectToWiFi();
     }
     else if (probeIntervalElapsed())
-    {
-        int satCount = satelliteComputer.fetchSatellites(satellites);
-        if (satCount != -1)
+    { 
+        auto satellites = satelliteComputer.fetchSatellites();
+        if (satellites.size() > 0)
         {
+            // TODO: Turn this into a generic function in LedMatrix which takes any vector of
+            //  Coordinates and transforms them into valid matrix coordinates. 
             auto leds = satelliteToLedConverter.convert(satellites);
             ledMatrix.update(leds);
             seedHandler.updateSeed(satellites);

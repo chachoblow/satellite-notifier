@@ -3,12 +3,10 @@
 #include <Arduino.h>
 #include "coordinate.h"
 
-class Satellite
+struct Satellite
 {
-    public:
-        float altitude;
-        Coordinate coordinate;
-        String name;
-        Satellite();
-        Satellite(float, Coordinate, String);
+    int id;
+    std::string name;
+    Coordinate coordinate;
+    float altitude;
 };
