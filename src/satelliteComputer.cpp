@@ -28,6 +28,17 @@ SatelliteComputer::SatelliteComputer()
         "-----END CERTIFICATE-----\n";
 }
 
+std::vector<Coordinate> SatelliteComputer::fetchSatelliteCoordinates()
+{
+    const auto satellites = fetchSatellites();
+    std::vector<Coordinate> result;
+    for (const auto satellite: satellites)
+    {
+        result.push_back(satellite.coordinate);
+    }
+    return result;
+}
+
 std::vector<Satellite> SatelliteComputer::fetchSatellites() 
 {
     _client.stop();
@@ -133,7 +144,7 @@ DynamicJsonDocument SatelliteComputer::deserializeJson()
     return doc;
 }
 
-std::vector<Satellite> SatelliteComputer::extractResponseValues(DynamicJsonDocument doc)
+std::vector<Satellite> SatelliteComputer::extractResponseValues(const DynamicJsonDocument doc)
 {
     std::vector<Satellite> satellites;
     int satCount = doc["info"]["satcount"];

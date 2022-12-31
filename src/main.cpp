@@ -8,7 +8,6 @@
 #include "wiFiHandler.h"
 #include "satelliteComputer.h"
 #include "ledMatrix.h"
-#include "satelliteToLedConverter.h"
 #include "seedHandler.h"
 #include "secrets.h"
 
@@ -20,19 +19,11 @@ WiFiHandler wiFiHandler(Secrets::SSID, Secrets::PASSWORD);
 
 // Satellites
 SatelliteComputer satelliteComputer;
-std::vector<Satellite> satellites;
 
 // LED matrix
 const int MATRIX_WIDTH = 9;
 const int MATRIX_HEIGHT = 9;
 LedMatrix ledMatrix(MATRIX_WIDTH, MATRIX_HEIGHT);
-std::vector<Coordinate> leds;
-const Coordinate CENTER(
-    SatelliteConstants::MY_LAT, SatelliteConstants::MY_LNG);
-SatelliteToLedConverter satelliteToLedConverter(
-    MATRIX_WIDTH, MATRIX_HEIGHT,
-    SatelliteConstants::SEARCH_RADIUS, SatelliteConstants::SEARCH_RADIUS,
-    CENTER);
 
 // Speaker
 // Speaker speaker(0, 8, 19);
@@ -65,14 +56,16 @@ void loop()
     }
     else if (probeIntervalElapsed())
     { 
-        auto satellites = satelliteComputer.fetchSatellites();
-        if (satellites.size() > 0)
+        auto satelliteCoordinates = satelliteComputer.fetchSatelliteCoordinates();
+        if (satelliteCoordinates.size() > 0)
         {
-            // TODO: Turn this into a generic function in LedMatrix which takes any vector of
-            //  Coordinates and transforms them into valid matrix coordinates. 
-            auto leds = satelliteToLedConverter.convert(satellites);
+            auto leds = ledMatrix.transformCoordinates(
+                SatelliteConstants::SEARCH_X_MIN, SatelliteConstants::SEARCH_X_MAX, 
+                SatelliteConstants::SEARCH_Y_MIN, SatelliteConstants::SEARCH_Y_MAX, 
+                satelliteCoordinates);
             ledMatrix.update(leds);
-            seedHandler.updateSeed(satellites);
+            // TODO: Update seedHanlder
+            //seedHandler.updateSeed(satellites);
         }
     }
 }

@@ -26,6 +26,10 @@ namespace SatelliteConstants
     const float MY_ALT = 0;
     const int SAT_CATEGORY_ID = 0;
     const float SEARCH_RADIUS = 7;
+    const float SEARCH_X_MIN = MY_LAT - SEARCH_RADIUS;
+    const float SEARCH_X_MAX = MY_LAT + SEARCH_RADIUS;
+    const float SEARCH_Y_MIN = MY_LNG - SEARCH_RADIUS;
+    const float SEARCH_Y_MAX = MY_LNG + SEARCH_RADIUS; 
 }
 
 class SatelliteComputer
@@ -34,6 +38,7 @@ class SatelliteComputer
         unsigned long lastConnectionTime;
         SatelliteComputer();
         std::vector<Satellite> fetchSatellites();
+        std::vector<Coordinate> fetchSatelliteCoordinates();
         
     private:
         WiFiClientSecure _client;
@@ -43,6 +48,6 @@ class SatelliteComputer
         void checkHttpStatus();
         void skipHttpHeaders();
         DynamicJsonDocument deserializeJson();
-        std::vector<Satellite> extractResponseValues(DynamicJsonDocument);
+        std::vector<Satellite> extractResponseValues(const DynamicJsonDocument);
         void printSatellitesToSerial(const std::vector<Satellite>&) const;
 };

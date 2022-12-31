@@ -21,6 +21,7 @@ class LedMatrix
         LedMatrix(int, int);
         void initialize();
         void update(const std::vector<Coordinate>&);
+        std::vector<Coordinate> transformCoordinates(const float, const float, const float, const float, const std::vector<Coordinate>&) const;
 
     private:
         Adafruit_IS31FL3731 _ledMatrix;
@@ -29,4 +30,5 @@ class LedMatrix
         std::vector<Coordinate> getApplicableCoordinates(const std::vector<Coordinate>&) const;
         void drawMatrix(const std::vector<Coordinate>&);
         void printCoordinatesToSerial(const std::vector<Coordinate>&) const;
+        int linearInterpolate(const int, const float, const float, const float, const float) const;
 };
