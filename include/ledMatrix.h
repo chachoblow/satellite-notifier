@@ -26,9 +26,7 @@ class LedMatrix
         Adafruit_IS31FL3731 _ledMatrix;
         int _width;
         int _height;
-        bool coordinateInMatrixRange(const Coordinate&) const;
-        std::vector<Led> ledsFromCoordinates(const std::vector<Coordinate>&) const; 
-        void clearMatrix();
-        void redrawMatrix(const std::vector<Led>&);
-        void printLedsToSerial(const std::vector<Led>&) const;
+        std::vector<Coordinate> getApplicableCoordinates(const std::vector<Coordinate>&) const;
+        void drawMatrix(const std::vector<Coordinate>&);
+        void printCoordinatesToSerial(const std::vector<Coordinate>&) const;
 };
