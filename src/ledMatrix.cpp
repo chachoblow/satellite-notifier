@@ -46,15 +46,19 @@ std::vector<Coordinate> LedMatrix::getApplicableCoordinates(const std::vector<Co
 
 void LedMatrix::drawMatrix(const std::vector<Coordinate> &coordinates) 
 {
-    auto brightnessInterval = 255 / std::max(static_cast<int>(coordinates.size()), 1);
     int pixelValues[LedMatrixConstants::BOARD_WIDTH][LedMatrixConstants::BOARD_HEIGHT] = {0};
-    for (const auto coordinate: coordinates)
-    {
-        const auto x = static_cast<int>(coordinate.x);
-        const auto y = static_cast<int>(coordinate.y);
-        pixelValues[x][y] = pixelValues[x][y] + brightnessInterval;
-    }
 
+    if (coordinates.size() > 0)
+    {
+        auto brightnessInterval = 255 / coordinates.size();
+        for (const auto coordinate: coordinates)
+        {
+            const auto x = static_cast<int>(coordinate.x);
+            const auto y = static_cast<int>(coordinate.y);
+            pixelValues[x][y] = pixelValues[x][y] + brightnessInterval;
+        }
+    }
+    
     for (int x = 0; x < LedMatrixConstants::BOARD_WIDTH; x++)
     {
         for (int y = 0; y < LedMatrixConstants::BOARD_HEIGHT; y++)
