@@ -78,7 +78,10 @@ void LedMatrix::printCoordinatesToSerial(const std::vector<Coordinate> &coordina
     Serial.println();
 }
 
-std::vector<Coordinate> LedMatrix::transformCoordinates(const float xMin, const float xMax, const float yMin, const float yMax, const std::vector<Coordinate> &coordinates) const
+std::vector<Coordinate> LedMatrix::transformCoordinates(
+    const float xMin, const float xMax, 
+    const float yMin, const float yMax, 
+    const std::vector<Coordinate> &coordinates) const
 {
     std::vector<Coordinate> result;
     for (const auto coordinate: coordinates)
@@ -91,7 +94,10 @@ std::vector<Coordinate> LedMatrix::transformCoordinates(const float xMin, const 
     return result;
 }
 
-int LedMatrix::linearInterpolate(const int value, const float minInRange, const float maxInRange, const float minOutRange, const float maxOutRange) const 
+int LedMatrix::linearInterpolate(
+    const int value, 
+    const float minInRange, const float maxInRange, 
+    const float minOutRange, const float maxOutRange) const 
 {
     auto result = (value - minInRange) / (maxInRange - minInRange);
     result = minOutRange + (maxOutRange - minOutRange) * result;

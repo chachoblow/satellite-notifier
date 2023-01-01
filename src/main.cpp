@@ -21,9 +21,7 @@ WiFiHandler wiFiHandler(Secrets::SSID, Secrets::PASSWORD);
 SatelliteComputer satelliteComputer;
 
 // LED matrix
-const int MATRIX_WIDTH = 9;
-const int MATRIX_HEIGHT = 9;
-LedMatrix ledMatrix(MATRIX_WIDTH, MATRIX_HEIGHT);
+LedMatrix ledMatrix(9, 9);
 
 // Speaker
 // Speaker speaker(0, 8, 19);
