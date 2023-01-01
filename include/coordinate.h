@@ -1,13 +1,8 @@
 #pragma once
 
-#include <Arduino.h>
-
-class Coordinate
+template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
+struct Coordinate
 {
-    public:
-        float x;
-        float y;
-        Coordinate();
-        Coordinate(float, float);
-        bool equals(const Coordinate&) const;
+    T x;
+    T y;
 };

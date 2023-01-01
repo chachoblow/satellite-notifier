@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 #include <vector>
-#include "satellite.h"
+#include "satelliteComputer.h"
 
 namespace SpeakerConstants
 {
@@ -19,6 +19,7 @@ class Speaker
         Speaker();
         Speaker(uint8_t, uint8_t, uint8_t);
         void initialize();
+        // TODO: Don't have this depend on Satellite. Instead, something more generic.
         void player(std::vector<Satellite>&);
 
     private:

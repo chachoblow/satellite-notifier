@@ -22,16 +22,16 @@ void LedMatrix::initialize()
     Serial.println();
 }
 
-void LedMatrix::update(const std::vector<Coordinate> &coordinates)
+void LedMatrix::update(const std::vector<Coordinate<int>> &coordinates)
 {
     auto applicableCoordinates = getApplicableCoordinates(coordinates);
     drawMatrix(applicableCoordinates);
     printCoordinatesToSerial(applicableCoordinates);
 }
 
-std::vector<Coordinate> LedMatrix::getApplicableCoordinates(const std::vector<Coordinate> &coordinates) const 
+std::vector<Coordinate<int>> LedMatrix::getApplicableCoordinates(const std::vector<Coordinate<int>> &coordinates) const 
 {
-    std::vector<Coordinate> applicableCoordinates;
+    std::vector<Coordinate<int>> applicableCoordinates;
     for (const auto coordinate: coordinates)
     {
         const int x = coordinate.x;
@@ -44,7 +44,7 @@ std::vector<Coordinate> LedMatrix::getApplicableCoordinates(const std::vector<Co
     return applicableCoordinates;
 }
 
-void LedMatrix::drawMatrix(const std::vector<Coordinate> &coordinates) 
+void LedMatrix::drawMatrix(const std::vector<Coordinate<int>> &coordinates) 
 {
     int pixelValues[LedMatrixConstants::BOARD_WIDTH][LedMatrixConstants::BOARD_HEIGHT] = {0};
 
@@ -68,7 +68,7 @@ void LedMatrix::drawMatrix(const std::vector<Coordinate> &coordinates)
     }
 }
 
-void LedMatrix::printCoordinatesToSerial(const std::vector<Coordinate> &coordinates) const
+void LedMatrix::printCoordinatesToSerial(const std::vector<Coordinate<int>> &coordinates) const
 {
     Serial.println();
     Serial.println("--- Active Coordinates ---");
@@ -82,17 +82,17 @@ void LedMatrix::printCoordinatesToSerial(const std::vector<Coordinate> &coordina
     Serial.println();
 }
 
-std::vector<Coordinate> LedMatrix::transformCoordinates(
+std::vector<Coordinate<int>> LedMatrix::transformCoordinates(
     const float xMin, const float xMax, 
     const float yMin, const float yMax, 
-    const std::vector<Coordinate> &coordinates) const
+    const std::vector<Coordinate<float>> &coordinates) const
 {
-    std::vector<Coordinate> result;
+    std::vector<Coordinate<int>> result;
     for (const auto coordinate: coordinates)
     {
         auto x = linearInterpolate(coordinate.x, xMin, xMax, 0, _width - 1);
         auto y = linearInterpolate(coordinate.y, yMin, yMax, 0, _height - 1);
-        Coordinate current(x, y);
+        Coordinate<int> current{x, y};
         result.push_back(current);
     }
     return result;

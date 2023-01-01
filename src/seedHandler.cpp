@@ -13,7 +13,7 @@ void SeedHandler::updateSeed(std::vector<Satellite> &satellites)
     {
         Satellite current = satellites[i];
 
-        float coordinateSum = abs(current.coordinate.x) + abs(current.coordinate.y);
+        float coordinateSum = abs(current.latitude) + abs(current.longitude);
         coordinateSum = map(coordinateSum, -270, 270, 0, 255);
         values.push_back((int)coordinateSum);
 

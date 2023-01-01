@@ -28,13 +28,13 @@ SatelliteComputer::SatelliteComputer()
         "-----END CERTIFICATE-----\n";
 }
 
-std::vector<Coordinate> SatelliteComputer::fetchSatelliteCoordinates()
+std::vector<Coordinate<float>> SatelliteComputer::getSatelliteCoordinates(const std::vector<Satellite> &satellites) const
 {
-    const auto satellites = fetchSatellites();
-    std::vector<Coordinate> result;
+    std::vector<Coordinate<float>> result;
     for (const auto satellite: satellites)
     {
-        result.push_back(satellite.coordinate);
+        Coordinate<float> current{satellite.latitude, satellite.longitude};
+        result.push_back(current);
     }
     return result;
 }
@@ -155,9 +155,8 @@ std::vector<Satellite> SatelliteComputer::extractResponseValues(const DynamicJso
         float satLat = doc["above"][i]["satlat"];
         float satLng = doc["above"][i]["satlng"];
         float satAlt = doc["above"][i]["satalt"];
-        
-        Coordinate satCoord(satLat, satLng);
-        Satellite current{satId, satName, satCoord, satAlt};
+    
+        Satellite current{satId, satName, satLat, satLng, satAlt};
         satellites.push_back(current);
     }
     return satellites;
@@ -171,8 +170,8 @@ void SatelliteComputer::printSatellitesToSerial(const std::vector<Satellite> &sa
     {
         Serial.print("Id: " + String(satellite.id));
         Serial.print(", Name: " + String(satellite.name.c_str()));
-        Serial.print(", Lng: " + String(satellite.coordinate.x));
-        Serial.print(", Lat: " + String(satellite.coordinate.y));
+        Serial.print(", Lat: " + String(satellite.latitude));
+        Serial.print(", Lng: " + String(satellite.longitude));
         Serial.print(", Alt: " + String(satellite.altitude));
         Serial.println();
     }

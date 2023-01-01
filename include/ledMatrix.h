@@ -19,15 +19,15 @@ class LedMatrix
         LedMatrix();
         LedMatrix(int, int);
         void initialize();
-        void update(const std::vector<Coordinate>&);
-        std::vector<Coordinate> transformCoordinates(const float, const float, const float, const float, const std::vector<Coordinate>&) const;
+        void update(const std::vector<Coordinate<int>>&);
+        std::vector<Coordinate<int>> transformCoordinates(const float, const float, const float, const float, const std::vector<Coordinate<float>>&) const;
 
     private:
         Adafruit_IS31FL3731 _ledMatrix;
         int _width;
         int _height;
-        std::vector<Coordinate> getApplicableCoordinates(const std::vector<Coordinate>&) const;
-        void drawMatrix(const std::vector<Coordinate>&);
-        void printCoordinatesToSerial(const std::vector<Coordinate>&) const;
+        std::vector<Coordinate<int>> getApplicableCoordinates(const std::vector<Coordinate<int>>&) const;
+        void drawMatrix(const std::vector<Coordinate<int>>&);
+        void printCoordinatesToSerial(const std::vector<Coordinate<int>>&) const;
         int linearInterpolate(const int, const float, const float, const float, const float) const;
 };

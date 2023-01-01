@@ -5,7 +5,6 @@
 #include <ArduinoJson.h>
 #include <vector>
 #include "coordinate.h"
-#include "satellite.h"
 #include "secrets.h"
 
 #define ARDUINOJSON_DECODE_UNICODE 1
@@ -32,13 +31,22 @@ namespace SatelliteConstants
     const float SEARCH_Y_MAX = MY_LNG + SEARCH_RADIUS; 
 }
 
+struct Satellite
+{
+    int id;
+    std::string name;
+    float latitude;
+    float longitude;
+    float altitude;
+};
+
 class SatelliteComputer
 {
     public:
         unsigned long lastConnectionTime;
         SatelliteComputer();
+        std::vector<Coordinate<float>> getSatelliteCoordinates(const std::vector<Satellite>&) const;
         std::vector<Satellite> fetchSatellites();
-        std::vector<Coordinate> fetchSatelliteCoordinates();
         
     private:
         WiFiClientSecure _client;

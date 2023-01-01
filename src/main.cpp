@@ -2,7 +2,6 @@
 #include <SPI.h>
 #include <Wire.h>
 #include "coordinate.h"
-#include "satellite.h"
 #include "speaker.h"
 #include "wiFiHandler.h"
 #include "satelliteComputer.h"
@@ -53,9 +52,10 @@ void loop()
     }
     else if (probeIntervalElapsed())
     { 
-        auto satelliteCoordinates = satelliteComputer.fetchSatelliteCoordinates();
-        if (satelliteCoordinates.size() > 0)
+        auto satellites = satelliteComputer.fetchSatellites();
+        if (satellites.size() > 0)
         {
+            auto satelliteCoordinates = satelliteComputer.getSatelliteCoordinates(satellites);
             auto leds = ledMatrix.transformCoordinates(
                 SatelliteConstants::SEARCH_X_MIN, SatelliteConstants::SEARCH_X_MAX, 
                 SatelliteConstants::SEARCH_Y_MIN, SatelliteConstants::SEARCH_Y_MAX, 
