@@ -4,8 +4,8 @@
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 #include <vector>
-#include "coordinate.h"
-#include "secrets.h"
+#include <coordinate.h>
+#include <secrets.h>
 
 #define ARDUINOJSON_DECODE_UNICODE 1
 #define ARDUINOJSON_ENABLE_ARDUINO_STRING 1

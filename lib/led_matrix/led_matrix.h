@@ -5,7 +5,7 @@
 #include <Adafruit_IS31FL3731.h>
 #include <cmath>
 #include <vector>
-#include "coordinate.h"
+#include <coordinate.h>
 
 namespace LedMatrixConstants
 {

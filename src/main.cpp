@@ -1,13 +1,13 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <Wire.h>
-#include "coordinate.h"
-#include "speaker.h"
-#include "wiFiHandler.h"
-#include "satelliteComputer.h"
-#include "ledMatrix.h"
-#include "seedHandler.h"
-#include "secrets.h"
+#include <satellite_computer.h>
+#include <led_matrix.h>
+#include <seed_handler.h>
+#include <speaker.h>
+#include <wifi_handler.h>
+#include <coordinate.h>
+#include <secrets.h>
 
 #define RXD2 16
 #define TXD2 17

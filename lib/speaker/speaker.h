@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 #include <vector>
-#include "satelliteComputer.h"
+#include <satellite_computer.h>
 
 namespace SpeakerConstants
 {

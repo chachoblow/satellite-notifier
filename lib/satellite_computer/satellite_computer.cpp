@@ -1,4 +1,4 @@
-#include "satelliteComputer.h"
+#include <satellite_computer.h>
 
 SatelliteComputer::SatelliteComputer()
 {
