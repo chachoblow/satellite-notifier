@@ -6,7 +6,6 @@
 #include <cmath>
 #include <vector>
 #include "coordinate.h"
-#include "led.h"
 
 namespace LedMatrixConstants
 {

@@ -2,7 +2,6 @@
 #include <SPI.h>
 #include <Wire.h>
 #include "coordinate.h"
-#include "led.h"
 #include "satellite.h"
 #include "speaker.h"
 #include "wiFiHandler.h"
