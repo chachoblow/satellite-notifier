@@ -6,19 +6,20 @@ LedMatrix::LedMatrix(int width, int height)
 {
     _width = width;
     _height = height;
-    _ledMatrix = Adafruit_IS31FL3731();
 }
 
 void LedMatrix::initialize()
 {
+    _ledMatrix = Adafruit_IS31FL3731();
     Serial.println("Initializing LED matrix...");
-    if (!_ledMatrix.begin()) 
+    if (!_ledMatrix.begin())
     {
         Serial.println("IS31 not found.");
         Serial.println();
-        while(1);
+        while (1)
+            ;
     }
-    Serial.println("IS31 found.");  
+    Serial.println("IS31 found.");
     Serial.println();
 }
 
@@ -29,10 +30,10 @@ void LedMatrix::update(const std::vector<Coordinate<int>> &coordinates)
     printCoordinatesToSerial(applicableCoordinates);
 }
 
-std::vector<Coordinate<int>> LedMatrix::getApplicableCoordinates(const std::vector<Coordinate<int>> &coordinates) const 
+std::vector<Coordinate<int>> LedMatrix::getApplicableCoordinates(const std::vector<Coordinate<int>> &coordinates) const
 {
     std::vector<Coordinate<int>> applicableCoordinates;
-    for (const auto coordinate: coordinates)
+    for (const auto coordinate : coordinates)
     {
         const int x = coordinate.x;
         const int y = coordinate.y;
@@ -44,21 +45,21 @@ std::vector<Coordinate<int>> LedMatrix::getApplicableCoordinates(const std::vect
     return applicableCoordinates;
 }
 
-void LedMatrix::drawMatrix(const std::vector<Coordinate<int>> &coordinates) 
+void LedMatrix::drawMatrix(const std::vector<Coordinate<int>> &coordinates)
 {
     int pixelValues[LedMatrixConstants::BOARD_WIDTH][LedMatrixConstants::BOARD_HEIGHT] = {0};
 
     if (coordinates.size() > 0)
     {
         auto brightnessInterval = 255 / coordinates.size();
-        for (const auto coordinate: coordinates)
+        for (const auto coordinate : coordinates)
         {
             const auto x = static_cast<int>(coordinate.x);
             const auto y = static_cast<int>(coordinate.y);
             pixelValues[x][y] = pixelValues[x][y] + brightnessInterval;
         }
     }
-    
+
     for (int x = 0; x < LedMatrixConstants::BOARD_WIDTH; x++)
     {
         for (int y = 0; y < LedMatrixConstants::BOARD_HEIGHT; y++)
@@ -72,7 +73,7 @@ void LedMatrix::printCoordinatesToSerial(const std::vector<Coordinate<int>> &coo
 {
     Serial.println();
     Serial.println("--- Active Coordinates ---");
-    for (const auto coordinate: coordinates)
+    for (const auto coordinate : coordinates)
     {
         auto x = static_cast<int>(coordinate.x);
         auto y = static_cast<int>(coordinate.y);
@@ -83,12 +84,12 @@ void LedMatrix::printCoordinatesToSerial(const std::vector<Coordinate<int>> &coo
 }
 
 std::vector<Coordinate<int>> LedMatrix::transformCoordinates(
-    const float xMin, const float xMax, 
-    const float yMin, const float yMax, 
+    const float xMin, const float xMax,
+    const float yMin, const float yMax,
     const std::vector<Coordinate<float>> &coordinates) const
 {
     std::vector<Coordinate<int>> result;
-    for (const auto coordinate: coordinates)
+    for (const auto coordinate : coordinates)
     {
         auto x = linearInterpolate(coordinate.x, xMin, xMax, 0, _width - 1);
         auto y = linearInterpolate(coordinate.y, yMin, yMax, 0, _height - 1);
@@ -99,11 +100,11 @@ std::vector<Coordinate<int>> LedMatrix::transformCoordinates(
 }
 
 int LedMatrix::linearInterpolate(
-    const int value, 
-    const float minInRange, const float maxInRange, 
-    const float minOutRange, const float maxOutRange) const 
+    const float value,
+    const float minInRange, const float maxInRange,
+    const float minOutRange, const float maxOutRange) const
 {
     auto result = (value - minInRange) / (maxInRange - minInRange);
     result = minOutRange + (maxOutRange - minOutRange) * result;
-    return result;
+    return round(result);
 }
