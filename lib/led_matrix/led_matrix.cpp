@@ -47,6 +47,8 @@ std::vector<Coordinate<int>> LedMatrix::getApplicableCoordinates(const std::vect
 
 void LedMatrix::drawMatrix(const std::vector<Coordinate<int>> &coordinates)
 {
+    // Purposefully clearing the entire matrix. If the _width and _height are less than the matrix's
+    //  full width and height, LEDs can get "stuck" on.
     int pixelValues[LedMatrixConstants::BOARD_WIDTH][LedMatrixConstants::BOARD_HEIGHT] = {0};
 
     if (coordinates.size() > 0)

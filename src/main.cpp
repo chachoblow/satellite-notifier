@@ -12,19 +12,10 @@
 #define RXD2 16
 #define TXD2 17
 
-// WiFi / Connection
 WiFiHandler wiFiHandler(Secrets::SSID, Secrets::PASSWORD);
-
-// Satellites
 SatelliteComputer satelliteComputer;
-
-// LED matrix
 LedMatrix ledMatrix(9, 9);
-
-// Speaker
 // Speaker speaker(0, 8, 19);
-
-// Seed
 HardwareSerial SerialSeed(2);
 SeedHandler seedHandler(SerialSeed);
 
@@ -51,18 +42,18 @@ void loop()
         wiFiHandler.connectToWiFi();
     }
     else if (probeIntervalElapsed())
-    { 
+    {
         auto satellites = satelliteComputer.fetchSatellites();
         if (satellites.size() > 0)
         {
             auto satelliteCoordinates = satelliteComputer.getSatelliteCoordinates(satellites);
             auto leds = ledMatrix.transformCoordinates(
-                SatelliteConstants::SEARCH_X_MIN, SatelliteConstants::SEARCH_X_MAX, 
-                SatelliteConstants::SEARCH_Y_MIN, SatelliteConstants::SEARCH_Y_MAX, 
+                SatelliteConstants::SEARCH_X_MIN, SatelliteConstants::SEARCH_X_MAX,
+                SatelliteConstants::SEARCH_Y_MIN, SatelliteConstants::SEARCH_Y_MAX,
                 satelliteCoordinates);
             ledMatrix.update(leds);
             // TODO: Update seedHanlder
-            //seedHandler.updateSeed(satellites);
+            // seedHandler.updateSeed(satellites);
         }
     }
 }
