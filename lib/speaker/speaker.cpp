@@ -15,7 +15,7 @@ void Speaker::initialize()
 {
     Serial.println("Initializing speaker...");
     Serial.println();
-    
+
     ledcSetup(_channel, 0, _bits);
     ledcAttachPin(_pin, _channel);
 
@@ -82,19 +82,19 @@ void Speaker::player(std::vector<Satellite> &satellites)
     for (int i = 0; i < 25; i++)
     {
         Serial.println("Iteration: " + String(i));
-        for (int j = 0; j < satellites.size(); j ++)
+        for (int j = 0; j < satellites.size(); j++)
         {
             if (j == 0)
             {
                 Speaker::SmoothStep(signals[satellites.size() - 1], signals[0], 25, duty);
             }
-            else 
+            else
             {
                 Speaker::SmoothStep(signals[j - 1], signals[j], 25, duty);
             }
         }
     }
-    
+
     ledcWriteTone(_channel, 0);
 }
 
@@ -138,17 +138,15 @@ float Speaker::SmoothStepIncrement(float x)
 {
     float increment = x * x * (3 - (2 * x));
     // 20 sounded pretty cool...5 is a bit smoother with a similar effect.
-    return pow(increment, 5);
+    return pow(increment, 20);
 }
 
 float Speaker::catmullrom(float t, float p0, float p1, float p2, float p3)
 {
-    float increment =  0.5f * (
-        (2 * p1) +
-        (-p0 + p2) * t +
-        (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t +
-        (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t
-    );
+    float increment = 0.5f * ((2 * p1) +
+                              (-p0 + p2) * t +
+                              (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t +
+                              (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
 
     return pow(increment, 10);
 }

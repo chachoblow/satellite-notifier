@@ -1,15 +1,15 @@
 #include <seed_handler.h>
 
-SeedHandler::SeedHandler(HardwareSerial &serialSeed): _serialSeed(serialSeed)
+SeedHandler::SeedHandler(HardwareSerial &serialSeed) : _serialSeed(serialSeed)
 {
-    _serialSeed.begin(115200, SERIAL_8N1, RXD2, TXD2);
+    _serialSeed.begin(115200, SERIAL_8N1, RXD2, TXD2); // UART2
 }
 
 void SeedHandler::updateSeed(std::vector<Satellite> &satellites)
 {
     std::vector<int> values;
 
-    for (int i = 0; i < satellites.size(); i++) 
+    for (int i = 0; i < satellites.size(); i++)
     {
         Satellite current = satellites[i];
 
@@ -21,18 +21,25 @@ void SeedHandler::updateSeed(std::vector<Satellite> &satellites)
         //  they are mapped, this leads to either zero, or numbers close to 255.
         float altitude = current.altitude;
         altitude = constrain(altitude, 0, 100000000);
-        altitude = map (altitude, 0, 100000000, 0, 255);
+        altitude = map(altitude, 0, 100000000, 0, 255);
         values.push_back((int)altitude);
     }
 
-    Serial.println("Sending satellite values:");
-
-    for (int i = 0; i < values.size(); i++)
+    if (_serialSeed.available())
     {
-        Serial.println(values[i]);
-        _serialSeed.write(values[i]);
-    }
+        Serial.println("Sending satellite values:");
 
-    Serial.println("All values sent.");
-    _serialSeed.write('\n');
+        for (int i = 0; i < values.size(); i++)
+        {
+            Serial.println(values[i]);
+            _serialSeed.write(values[i]); // Write to Daisy Seed
+        }
+
+        Serial.println("All values sent.");
+        _serialSeed.write('\n'); // Write to Daisy Seed
+    }
+    else
+    {
+        Serial.println("_serialSeed not available. Satellite values not sent.");
+    }
 }

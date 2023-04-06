@@ -15,9 +15,9 @@
 WiFiHandler wiFiHandler(Secrets::SSID, Secrets::PASSWORD);
 SatelliteComputer satelliteComputer;
 LedMatrix ledMatrix(9, 9);
-// Speaker speaker(0, 8, 19);
-HardwareSerial SerialSeed(2);
-SeedHandler seedHandler(SerialSeed);
+Speaker speaker(0, 8, 19);
+HardwareSerial SerialSeed(2);        // UART2 command
+SeedHandler seedHandler(SerialSeed); // Serial to Daisy Seed command
 
 void setup()
 {
@@ -25,6 +25,7 @@ void setup()
     delay(100);
     wiFiHandler.connectToWiFi();
     ledMatrix.initialize();
+    speaker.initialize();
     delay(500);
 }
 
@@ -53,7 +54,8 @@ void loop()
                 satelliteCoordinates);
             ledMatrix.update(leds);
             // TODO: Update seedHanlder
-            // seedHandler.updateSeed(satellites);
+            seedHandler.updateSeed(satellites);
+            // speaker.player(satellites);
         }
     }
 }
