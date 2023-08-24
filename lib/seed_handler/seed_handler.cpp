@@ -12,17 +12,7 @@ void SeedHandler::updateSeed(std::vector<Satellite> &satellites)
     for (int i = 0; i < satellites.size(); i++)
     {
         Satellite current = satellites[i];
-
-        float coordinateSum = abs(current.latitude) + abs(current.longitude);
-        coordinateSum = map(coordinateSum, -270, 270, 0, 255);
-        values.push_back((int)coordinateSum);
-
-        // TODO: Altitudes seem to be either really large numbers, or really small. When
-        //  they are mapped, this leads to either zero, or numbers close to 255.
-        float altitude = current.altitude;
-        altitude = constrain(altitude, 0, 100000000);
-        altitude = map(altitude, 0, 100000000, 0, 255);
-        values.push_back((int)altitude);
+        SeedHandler::addNormalizedSatelliteValues(values, current);
     }
 
     if (_serialSeed.available())
@@ -42,4 +32,17 @@ void SeedHandler::updateSeed(std::vector<Satellite> &satellites)
     {
         Serial.println("_serialSeed not available. Satellite values not sent.");
     }
+}
+
+void SeedHandler::addNormalizedSatelliteValues(std::vector<int> &values, Satellite satellite)
+{
+    int normalizedLongitude = map(satellite.longitude, SatelliteConstants::SEARCH_Y_MIN, SatelliteConstants::SEARCH_Y_MAX, 0, 255);
+    int normalizedLatitude = map(satellite.latitude, SatelliteConstants::SEARCH_X_MIN, SatelliteConstants::SEARCH_X_MAX, 0, 255);
+    int normalizedAltitude = static_cast<int>(satellite.altitude) % 100;
+    int normalizedId = satellite.id % 10;
+
+    values.push_back(normalizedLongitude);
+    values.push_back(normalizedLatitude);
+    values.push_back(normalizedAltitude);
+    values.push_back(normalizedId);
 }
