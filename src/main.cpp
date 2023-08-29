@@ -3,21 +3,16 @@
 #include <Wire.h>
 #include <satellite_computer.h>
 #include <led_matrix.h>
-#include <seed_handler.h>
-#include <speaker.h>
 #include <wifi_handler.h>
 #include <coordinate.h>
 #include <secrets.h>
 
-#define RXD2 16
-#define TXD2 17
-
 WiFiHandler wiFiHandler(Secrets::SSID, Secrets::PASSWORD);
 SatelliteComputer satelliteComputer;
 LedMatrix ledMatrix(9, 9);
-// Speaker speaker(0, 8, 19);
-HardwareSerial SerialSeed(2);
-SeedHandler seedHandler(SerialSeed);
+
+int potPin = 33;
+int potValue = 255;
 
 void setup()
 {
@@ -52,8 +47,11 @@ void loop()
                 SatelliteConstants::SEARCH_Y_MIN, SatelliteConstants::SEARCH_Y_MAX,
                 satelliteCoordinates);
             ledMatrix.update(leds);
-            // TODO: Update seedHanlder
-            // seedHandler.updateSeed(satellites);
         }
     }
+
+    // 0 - 4095
+    potValue = analogRead(potPin);
+    auto brightness = static_cast<float>(potValue) / 4095;
+    ledMatrix.brightness(brightness);
 }

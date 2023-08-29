@@ -45,11 +45,32 @@ std::vector<Coordinate<int>> LedMatrix::getApplicableCoordinates(const std::vect
     return applicableCoordinates;
 }
 
+// TODO: This doesn't take affect when fetching for satellites.
+// TODO: When we draw the matrix with new coorinates, the brightness isn't accounted for. So you
+//  get a flash of full brightness.
+void LedMatrix::brightness(const float brightness)
+{
+    Serial.println(brightness);
+    for (int x = 0; x < LedMatrixConstants::BOARD_WIDTH; x++)
+    {
+        for (int y = 0; y < LedMatrixConstants::BOARD_HEIGHT; y++)
+        {
+            _ledMatrix.drawPixel(x, y, _pixels[x][y] * brightness);
+        }
+    }
+}
+
 void LedMatrix::drawMatrix(const std::vector<Coordinate<int>> &coordinates)
 {
     // Purposefully clearing the entire matrix. If the _width and _height are less than the matrix's
     //  full width and height, LEDs can get "stuck" on.
-    int pixelValues[LedMatrixConstants::BOARD_WIDTH][LedMatrixConstants::BOARD_HEIGHT] = {0};
+    for (int x = 0; x < LedMatrixConstants::BOARD_WIDTH; x++)
+    {
+        for (int y = 0; y < LedMatrixConstants::BOARD_HEIGHT; y++)
+        {
+            _pixels[x][y] = 0;
+        }
+    }
 
     if (coordinates.size() > 0)
     {
@@ -58,7 +79,7 @@ void LedMatrix::drawMatrix(const std::vector<Coordinate<int>> &coordinates)
         {
             const auto x = static_cast<int>(coordinate.x);
             const auto y = static_cast<int>(coordinate.y);
-            pixelValues[x][y] = pixelValues[x][y] + brightnessInterval;
+            _pixels[x][y] = _pixels[x][y] + brightnessInterval;
         }
     }
 
@@ -66,7 +87,7 @@ void LedMatrix::drawMatrix(const std::vector<Coordinate<int>> &coordinates)
     {
         for (int y = 0; y < LedMatrixConstants::BOARD_HEIGHT; y++)
         {
-            _ledMatrix.drawPixel(x, y, pixelValues[x][y]);
+            _ledMatrix.drawPixel(x, y, _pixels[x][y]);
         }
     }
 }
