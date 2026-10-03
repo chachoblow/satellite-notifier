@@ -39,52 +39,70 @@ std::vector<Coordinate<float>> SatelliteComputer::getSatelliteCoordinates(const 
     return result;
 }
 
-std::vector<Satellite> SatelliteComputer::fetchSatellites()
+void SatelliteComputer::ensureConnected()
 {
-    _client.stop();
-    _client.setCACert(_rootCa);
-
-    Serial.println("Connecting to satellite service.");
-
-    if (_client.connect(_server, 443))
+    while (!_client.connected())
     {
-        lastConnectionTime = millis();
+        Serial.println("Client not connected.");
 
-        Serial.println("Connected to server.");
-        Serial.println();
+        _client.stop();
+        _client.setCACert(_rootCa);
 
-        try
+        Serial.println("Connecting client.");
+
+        if (_client.connect(_server, 443))
         {
-            makeHttpRequest();
-            checkHttpStatus();
-            skipHttpHeaders();
-            const auto response = deserializeJson();
-            const auto satellites = extractResponseValues(response);
-            printSatellitesToSerial(satellites);
-            return satellites;
+            Serial.println("Client connected.");
+            Serial.println();
         }
-        catch (std::runtime_error &e)
+        else
         {
-            Serial.println(e.what());
-            return {};
+            Serial.println();
+            Serial.println("Connection failed.");
+            char buf[200];
+            int err = _client.lastError(buf, 199);
+            buf[199] = '\0';
+            Serial.println("Last SSL error was:");
+            Serial.println(buf);
+            Serial.print("ERRCODE: ");
+            Serial.println(err);
+            Serial.println();
+
+            vTaskDelay(100);
         }
     }
+}
 
-    Serial.println();
-    Serial.println("Connection failed.");
-    char buf[200];
-    int err = _client.lastError(buf, 199);
-    buf[199] = '\0';
-    Serial.println("Last SSL error was:");
-    Serial.println(buf);
-    Serial.print("ERRCODE: ");
-    Serial.println(err);
-    Serial.println();
+std::vector<Satellite> SatelliteComputer::fetchSatellites()
+{
+    ensureConnected();
+    lastConnectionTime = millis();
+
+    try
+    {
+        vTaskDelay(0);
+        makeHttpRequest(false);
+        vTaskDelay(0);
+        checkHttpStatus();
+        vTaskDelay(0);
+        skipHttpHeaders();
+        vTaskDelay(0);
+        const auto response = deserializeJson();
+        const auto satellites = extractResponseValues(response);
+        printSatellitesToSerial(satellites);
+        return satellites;
+    }
+    catch (std::runtime_error &e)
+    {
+        Serial.println(e.what());
+        Serial.println();
+        return {};
+    }
 
     return {};
 }
 
-void SatelliteComputer::makeHttpRequest()
+void SatelliteComputer::makeHttpRequest(const bool closeConnection)
 {
     String request =
         "GET /rest/v1/satellite/above/" +
@@ -98,7 +116,12 @@ void SatelliteComputer::makeHttpRequest()
     _client.println(request);
     _client.print(F("Host: "));
     _client.println(_server);
-    _client.println(F("Connection: close"));
+
+    if (closeConnection)
+    {
+        _client.println(F("Connection: close"));
+    }
+
     if (_client.println() == 0)
     {
         throw std::runtime_error("Failed to send request.");

@@ -23,11 +23,32 @@ void LedMatrix::initialize()
     Serial.println();
 }
 
-void LedMatrix::update(const std::vector<Coordinate<int>> &coordinates)
+void LedMatrix::update(const std::vector<Coordinate<int>> &coordinates, const float brightness)
 {
     auto applicableCoordinates = getApplicableCoordinates(coordinates);
-    drawMatrix(applicableCoordinates);
-    printCoordinatesToSerial(applicableCoordinates);
+
+    if (applicableCoordinates.size() > 0)
+    {
+        // Purposefully clearing the entire matrix. If the _width and _height are less than the
+        //  matrix's full width and height, LEDs can get "stuck" on.
+        int pixels[LedMatrixConstants::BOARD_WIDTH][LedMatrixConstants::BOARD_HEIGHT] = {{0}};
+
+        auto brightnessInterval = 255 / applicableCoordinates.size();
+        for (const auto coordinate : applicableCoordinates)
+        {
+            const auto x = static_cast<int>(coordinate.x);
+            const auto y = static_cast<int>(coordinate.y);
+            pixels[x][y] = pixels[x][y] + brightnessInterval;
+        }
+
+        for (int x = 0; x < LedMatrixConstants::BOARD_WIDTH; x++)
+        {
+            for (int y = 0; y < LedMatrixConstants::BOARD_HEIGHT; y++)
+            {
+                _ledMatrix.drawPixel(x, y, pixels[x][y] * brightness);
+            }
+        }
+    }
 }
 
 std::vector<Coordinate<int>> LedMatrix::getApplicableCoordinates(const std::vector<Coordinate<int>> &coordinates) const
@@ -43,67 +64,6 @@ std::vector<Coordinate<int>> LedMatrix::getApplicableCoordinates(const std::vect
         }
     }
     return applicableCoordinates;
-}
-
-// TODO: This doesn't take affect when fetching for satellites.
-// TODO: When we draw the matrix with new coorinates, the brightness isn't accounted for. So you
-//  get a flash of full brightness.
-void LedMatrix::brightness(const float brightness)
-{
-    Serial.println(brightness);
-    for (int x = 0; x < LedMatrixConstants::BOARD_WIDTH; x++)
-    {
-        for (int y = 0; y < LedMatrixConstants::BOARD_HEIGHT; y++)
-        {
-            _ledMatrix.drawPixel(x, y, _pixels[x][y] * brightness);
-        }
-    }
-}
-
-void LedMatrix::drawMatrix(const std::vector<Coordinate<int>> &coordinates)
-{
-    // Purposefully clearing the entire matrix. If the _width and _height are less than the matrix's
-    //  full width and height, LEDs can get "stuck" on.
-    for (int x = 0; x < LedMatrixConstants::BOARD_WIDTH; x++)
-    {
-        for (int y = 0; y < LedMatrixConstants::BOARD_HEIGHT; y++)
-        {
-            _pixels[x][y] = 0;
-        }
-    }
-
-    if (coordinates.size() > 0)
-    {
-        auto brightnessInterval = 255 / coordinates.size();
-        for (const auto coordinate : coordinates)
-        {
-            const auto x = static_cast<int>(coordinate.x);
-            const auto y = static_cast<int>(coordinate.y);
-            _pixels[x][y] = _pixels[x][y] + brightnessInterval;
-        }
-    }
-
-    for (int x = 0; x < LedMatrixConstants::BOARD_WIDTH; x++)
-    {
-        for (int y = 0; y < LedMatrixConstants::BOARD_HEIGHT; y++)
-        {
-            _ledMatrix.drawPixel(x, y, _pixels[x][y]);
-        }
-    }
-}
-
-void LedMatrix::printCoordinatesToSerial(const std::vector<Coordinate<int>> &coordinates) const
-{
-    Serial.println();
-    Serial.println("--- Active Coordinates ---");
-    for (const auto coordinate : coordinates)
-    {
-        auto x = static_cast<int>(coordinate.x);
-        auto y = static_cast<int>(coordinate.y);
-
-        Serial.println("x: " + String(x) + ", y: " + String(y));
-    }
-    Serial.println();
 }
 
 std::vector<Coordinate<int>> LedMatrix::transformCoordinates(
@@ -130,4 +90,18 @@ int LedMatrix::linearInterpolate(
     auto result = (value - minInRange) / (maxInRange - minInRange);
     result = minOutRange + (maxOutRange - minOutRange) * result;
     return round(result);
+}
+
+void LedMatrix::printCoordinatesToSerial(const std::vector<Coordinate<int>> &coordinates) const
+{
+    Serial.println();
+    Serial.println("--- Matrix Coordinates ---");
+    for (const auto coordinate : coordinates)
+    {
+        auto x = static_cast<int>(coordinate.x);
+        auto y = static_cast<int>(coordinate.y);
+
+        Serial.println("x: " + String(x) + ", y: " + String(y));
+    }
+    Serial.println();
 }

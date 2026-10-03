@@ -28,7 +28,7 @@ namespace SatelliteConstants
     const float SEARCH_X_MIN = MY_LAT - SEARCH_RADIUS;
     const float SEARCH_X_MAX = MY_LAT + SEARCH_RADIUS;
     const float SEARCH_Y_MIN = MY_LNG - SEARCH_RADIUS;
-    const float SEARCH_Y_MAX = MY_LNG + SEARCH_RADIUS; 
+    const float SEARCH_Y_MAX = MY_LNG + SEARCH_RADIUS;
 }
 
 struct Satellite
@@ -42,20 +42,21 @@ struct Satellite
 
 class SatelliteComputer
 {
-    public:
-        unsigned long lastConnectionTime;
-        SatelliteComputer();
-        std::vector<Coordinate<float>> getSatelliteCoordinates(const std::vector<Satellite>&) const;
-        std::vector<Satellite> fetchSatellites();
-        
-    private:
-        WiFiClientSecure _client;
-        const char* _server;
-        const char* _rootCa;
-        void makeHttpRequest();
-        void checkHttpStatus();
-        void skipHttpHeaders();
-        DynamicJsonDocument deserializeJson();
-        std::vector<Satellite> extractResponseValues(const DynamicJsonDocument);
-        void printSatellitesToSerial(const std::vector<Satellite>&) const;
+public:
+    unsigned long lastConnectionTime;
+    SatelliteComputer();
+    std::vector<Coordinate<float>> getSatelliteCoordinates(const std::vector<Satellite> &) const;
+    std::vector<Satellite> fetchSatellites();
+    void ensureConnected();
+
+private:
+    WiFiClientSecure _client;
+    const char *_server;
+    const char *_rootCa;
+    void makeHttpRequest(const bool);
+    void checkHttpStatus();
+    void skipHttpHeaders();
+    DynamicJsonDocument deserializeJson();
+    std::vector<Satellite> extractResponseValues(const DynamicJsonDocument);
+    void printSatellitesToSerial(const std::vector<Satellite> &) const;
 };
